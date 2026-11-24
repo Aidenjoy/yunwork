@@ -1,0 +1,4 @@
+# Build output; `yarn build` regenerates it from src/.
+lib/
+# An earlier install of this package's peers, when there is one; see scripts/link-peers.mjs.
+node_modules/

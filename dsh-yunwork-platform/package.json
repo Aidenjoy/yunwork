@@ -1,0 +1,72 @@
+{
+  "name": "@yundashi/dsh-yunwork-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "云大师 account and model routes for DSH: sign in to Yundashi (utoken), keep the language key, and write the gateway as llm-pi-ai routes",
+  "license": "MIT",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  },
+  "files": [
+    "lib/**",
+    "README.md"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "build": "tsdown && node scripts/strip-region-labels.mjs && node scripts/verify-client-externals.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "link": "node scripts/link-peers.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.2.0-alpha.1",
+    "@deepseek-ai/dsh-credentials": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-primitives": "0.2.3-alpha.2",
+    "@deepseek-ai/schemastery": "^3.20.0-alpha.1",
+    "react": "18.3.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.2.0-alpha.1",
+    "@deepseek-ai/cordis-plugin-loader": "1.2.0-alpha.1",
+    "@deepseek-ai/dsh-client-connection": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-locale": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-primitives": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-config-editor": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-credentials": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-launch-environment": "0.2.3-alpha.2",
+    "@deepseek-ai/dsh-settings": "0.2.3-alpha.2",
+    "@deepseek-ai/schemastery": "^3.20.0-alpha.1",
+    "@types/node": "^22.20.0",
+    "@types/react": "^18",
+    "react": "18.3.1",
+    "tsdown": "0.22.2",
+    "typescript": "6.0.3",
+    "vitest": "4.1.8",
+    "zod": "4.6.6"
+  }
+}
