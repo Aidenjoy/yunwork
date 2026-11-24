@@ -1,0 +1,6 @@
+{
+  "apiBaseUrl": "https://token.yundashi.com",
+  "authBaseUrl": "https://token.yundashi.com",
+  "insecure": false,
+  "updateFeedUrl": null
+}

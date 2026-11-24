@@ -1,0 +1,6 @@
+{
+  "apiBaseUrl": "http://192.168.110.152:3000",
+  "authBaseUrl": "http://192.168.110.152:3000",
+  "insecure": true,
+  "updateFeedUrl": null
+}

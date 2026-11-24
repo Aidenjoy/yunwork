@@ -1,0 +1,13 @@
+{
+  "productName": "云大师 Agent",
+  "shortName": "云大师",
+  "tagline": "1 个人 + 云大师 = 一支企业",
+  "appId": "com.yundashi.agent",
+  "dataDirName": ".yunwork",
+  "defaultLocale": "zh-CN",
+  "brandColor": "#2D97D3",
+  "backgroundColor": "#F5F5F5",
+  "themeColor": "#2D97D3",
+  "artifactPrefix": "yundashi-agent",
+  "profileKey": "yundashi"
+}
