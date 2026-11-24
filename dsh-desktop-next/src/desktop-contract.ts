@@ -1,6 +1,7 @@
 /** General renderer state omits credentials; browser login links use a separate native operation. */
 import type { DesktopFailureStage } from '../../dsh-plugin-desktop/src/recovery-copy.ts'
 import type { DesktopAppIcon } from './app-icon.ts'
+import type { Brand } from './brand-defaults.ts'
 import type { DesktopHostExit } from './exit-code.ts'
 import { DEFAULT_HOST_STARTUP_TIMEOUT, type DesktopStartupTimeoutFailure, type HostStartupTimeout } from './host-startup-limit.ts'
 import type { Features, OnboardingChoices } from './profiles.ts'
@@ -98,6 +99,11 @@ export interface DesktopState {
   dataDirectory?: { source: 'desktop' | 'environment' | 'default'; environmentHome: string | null }
   platform: string
   version: string
+  /**
+   * Who this build is: the renderer's only source for its own name, since resolving one needs the file system. Absent
+   * only in state built by tests and older fixtures, so every reader names a fallback of its own.
+   */
+  brand?: Brand
   updates?: import('./update-state.ts').NextUpdateState
   trayAvailable: boolean
   notificationsAvailable: boolean

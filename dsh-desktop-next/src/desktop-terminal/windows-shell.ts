@@ -14,6 +14,7 @@ import {
   WINDOWS_SHELL_EXECUTABLE,
   type WindowsTerminalLauncher,
 } from './contract.ts'
+import { brand } from '../brand.ts'
 
 const WINDOWS_SHELL_COMMANDS = ['pwsh.exe', 'powershell.exe', 'cmd.exe'] as const
 
@@ -130,10 +131,14 @@ export function windowsLaunchBroker(
   const target = shell.kind === 'cmd'
     ? `"!${WINDOWS_SHELL_EXECUTABLE}!" /D /K call "!${WINDOWS_CMD_WELCOME}!"`
     : `"!${WINDOWS_SHELL_EXECUTABLE}!" -NoLogo -NoExit -ExecutionPolicy Bypass -File "!${WINDOWS_POWERSHELL_WELCOME}!"`
+  // A batch file is decoded with the console's code page, which is GBK on a Chinese Windows install: writing the brand
+  // name into the `start` title would turn it into mojibake. An upstream ASCII name still works, and any name with
+  // characters outside ASCII falls back to a neutral title instead of being mangled.
+  const title = /^[\x20-\x7e]+$/u.test(brand.productName) ? brand.productName : 'Terminal'
   return [
     '@echo off',
     'setlocal EnableDelayedExpansion',
-    `start "DSH NEXT" /D "!${WINDOWS_PROFILE_DIRECTORY}!" ${target}`,
+    `start "${title}" /D "!${WINDOWS_PROFILE_DIRECTORY}!" ${target}`,
     'exit /b %errorlevel%',
     '',
   ].join('\r\n')

@@ -5,9 +5,11 @@ import { access, lstat, mkdir, readdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { promisify } from 'node:util'
+import { brand } from './brand.ts'
 
 const execute = promisify(execFile)
-export const NEXT_APP_ID = 'ai.deepseek.dsh.desktop.next'
+/** The bundle identity an update must carry: the same one the build is signed with. */
+export const NEXT_APP_ID = brand.appId
 
 const MAC_PROGRESS_UI_SCRIPT = `
 ObjC.import("Cocoa");
@@ -78,7 +80,7 @@ export function assertNextMacBundle(identifier: string, manifest: unknown, versi
 }
 
 export function assertNextWindowsInstaller(info: { ProductName?: unknown; ProductVersion?: unknown }, version: string): void {
-  if (info.ProductName !== 'DSH NEXT' || info.ProductVersion !== version) throw new Error('The installer does not match this Next release')
+  if (info.ProductName !== brand.productName || info.ProductVersion !== version) throw new Error('The installer does not match this Next release')
 }
 
 export class NextUpdateInstaller {
@@ -155,7 +157,7 @@ export class NextUpdateInstaller {
       const prepared = this.prepared
       if (!this.nativeReady || !prepared?.bundle || !prepared.installed || !prepared.directory) throw new Error('No prepared update installer')
       const zh = (this.options.language?.() ?? 'en').toLowerCase().startsWith('zh')
-      const message = zh ? `正在更新 DSH NEXT 至 ${prepared.version}，请稍候…` : `Updating DSH NEXT to ${prepared.version}, please wait…`
+      const message = zh ? `正在更新 ${brand.productName} 至 ${prepared.version}，请稍候…` : `Updating ${brand.productName} to ${prepared.version}, please wait…`
       await new Promise<void>((resolve, reject) => {
         const child = spawn('/bin/sh', ['-c', MAC_UPDATE_SCRIPT], {
           detached: true, stdio: 'ignore', shell: false, cwd: '/',
@@ -165,7 +167,7 @@ export class NextUpdateInstaller {
             DSH_UPDATE_STAGED: prepared.bundle!,
             DSH_UPDATE_INSTALLED: prepared.installed!,
             DSH_UPDATE_DIR: prepared.directory!,
-            DSH_UPDATE_TITLE: 'DSH NEXT',
+            DSH_UPDATE_TITLE: brand.productName,
             DSH_UPDATE_MESSAGE: message,
             DSH_UPDATE_UI_SCRIPT: MAC_PROGRESS_UI_SCRIPT,
           },

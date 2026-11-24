@@ -3,6 +3,8 @@ import type { UpdateDownloadFailure } from './update-failure.ts'
 
 export interface NextUpdateState {
   phase: 'idle' | 'checking' | 'current' | 'available' | 'downloading' | 'preparing' | 'ready' | 'installing' | 'error'
+  /** This build was given no feed of its own, so there is nothing to check or install. */
+  disabled?: boolean
   version?: string
   received?: number
   total?: number
@@ -16,6 +18,7 @@ export interface NextUpdateState {
 
 export function updateLabel(state: NextUpdateState, language: string): string {
   const t = (zh: string, en: string) => language.toLowerCase().startsWith('zh') ? zh : en
+  if (state.disabled === true) return t('当前版本不提供应用内更新。', 'In-app updates are not available for this build.')
   switch (state.phase) {
     case 'checking': return t('正在检查更新…', 'Checking for updates…')
     case 'current': return t('已是最新版本', 'Up to date')
@@ -47,6 +50,7 @@ export function updateLabel(state: NextUpdateState, language: string): string {
 }
 
 export function updateAction(state: NextUpdateState): 'check-updates' | 'download-update' | 'install-update' | undefined {
+  if (state.disabled === true) return undefined
   if (state.phase === 'ready') return 'install-update'
   if (state.phase === 'available' || state.phase === 'error' && state.version && state.error !== 'service') return 'download-update'
   if (['idle', 'current', 'error'].includes(state.phase)) return 'check-updates'

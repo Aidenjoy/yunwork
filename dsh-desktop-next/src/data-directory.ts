@@ -1,13 +1,14 @@
 /**
- * Resolve the Next data directory: a directory chosen in the app wins, `DSH_DESKTOP_NEXT_HOME`
- * applies only without one, and `~/.dsh` is the default. The choice and the record of the last
- * launch live in one fixed directory, outside every data directory and independent of the
+ * Resolve the Next data directory: a directory chosen in the app wins, `DSH_DESKTOP_NEXT_HOME` applies only without
+ * one, and the brand's own default (`~/.dsh` upstream) is the last resort. The choice and the record of the last launch
+ * live in one fixed directory below the application data, outside every data directory and independent of the
  * environment, so neither moves when the variable is added, changed or lost.
  */
 import { lstatSync, readdirSync, realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { atomicJson, privateDirectory, readPrivateFile } from './private-files.ts'
+import { brand } from './brand.ts'
 
 export const DATA_DIRECTORY_VARIABLE = 'DSH_DESKTOP_NEXT_HOME'
 const LOCATION_FILE = 'desktop-next-location.json'
@@ -23,10 +24,19 @@ export interface DataDirectoryLocation {
   error?: string
 }
 
-export function defaultDataDirectory(userHome = homedir()): string { return join(userHome, '.dsh') }
+/**
+ * The default data directory when nothing else decides: the brand's own dotted directory under the user's home.
+ * Upstream resolves this to the shared `~/.dsh`, which a branded build must not inherit — two applications writing the
+ * same profile tree is how a user loses their sessions.
+ */
+export function defaultDataDirectory(userHome = homedir()): string { return join(userHome, brand.dataDirName) }
 
+/**
+ * Where the in-app choice is recorded, below the user's application data. That directory is named after the product,
+ * not after the home directory: upstream `DSH NEXT` against `~/.dsh` is the same split on the other side.
+ */
 export function dataDirectoryLocationRoot(packaged: boolean, appData: () => string, packageRoot: string): string {
-  return packaged ? join(appData(), 'DSH NEXT', 'home') : join(packageRoot, '.desktop-next', 'home')
+  return packaged ? join(appData(), brand.productName, 'home') : join(packageRoot, '.desktop-next', 'home')
 }
 
 export function dataDirectoryLocationFile(locationRoot: string): string { return join(locationRoot, LOCATION_FILE) }

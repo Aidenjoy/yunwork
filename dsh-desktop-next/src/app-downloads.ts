@@ -6,6 +6,7 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web'
 import { dialog, type BrowserWindow, type Session } from 'electron'
+import { brand } from './brand.ts'
 import { APP_URL } from './ipc.ts'
 
 /**
@@ -61,7 +62,7 @@ export function installAppDownloads(session: Pick<Session, 'on'>, options: {
     if (owner.isDestroyed()) return
     const zh = options.language().startsWith('zh')
     void dialog.showMessageBox(owner, {
-      type: 'error', title: 'DSH NEXT', message: zh ? '下载失败' : 'Download failed',
+      type: 'error', title: brand.productName, message: zh ? '下载失败' : 'Download failed',
       detail: error instanceof Error ? error.message : String(error),
     }).catch(options.warn)
   }

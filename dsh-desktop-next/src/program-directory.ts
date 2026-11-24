@@ -7,6 +7,7 @@
  */
 import { realpathSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
+import { brand } from './brand.ts'
 
 /** How a chosen folder relates to the program directory. */
 export type ProgramDirectoryOverlap = 'same' | 'inside' | 'contains'
@@ -116,17 +117,17 @@ export function programDirectoryRefusal(purpose: ProgramDirectoryPurpose, overla
   language: 'zh' | 'en'): ProgramDirectoryRefusal {
   const t = (chinese: string, english: string): string => language === 'zh' ? chinese : english
   const relation = {
-    same: t('所选文件夹就是 DSH NEXT 的安装目录。', 'The selected folder is the DSH NEXT installation folder.'),
-    inside: t('所选文件夹位于 DSH NEXT 的安装目录中。', 'The selected folder is inside the DSH NEXT installation folder.'),
-    contains: t('所选文件夹包含 DSH NEXT 的安装目录。', 'The selected folder contains the DSH NEXT installation folder.'),
+    same: t(`所选文件夹就是 ${brand.productName} 的安装目录。`, `The selected folder is the ${brand.productName} installation folder.`),
+    inside: t(`所选文件夹位于 ${brand.productName} 的安装目录中。`, `The selected folder is inside the ${brand.productName} installation folder.`),
+    contains: t(`所选文件夹包含 ${brand.productName} 的安装目录。`, `The selected folder contains the ${brand.productName} installation folder.`),
   }[overlap]
   const reason = purpose === 'workspace'
-    ? t('沙箱给工作区授予写权限时，会给整个目录树加上低完整性（Low）标签。安装目录中的程序带上这个标签后，DSH NEXT 将无法再启动。请选择安装目录以外的文件夹作为工作区。',
-      'When the sandbox grants write access to a workspace, it gives the whole folder tree a Low integrity label. Once the program in the installation folder carries that label, DSH NEXT can no longer start. Choose a folder outside the installation folder as the workspace.')
+    ? t(`沙箱给工作区授予写权限时，会给整个目录树加上低完整性（Low）标签。安装目录中的程序带上这个标签后，${brand.productName} 将无法再启动。请选择安装目录以外的文件夹作为工作区。`,
+      `When the sandbox grants write access to a workspace, it gives the whole folder tree a Low integrity label. Once the program in the installation folder carries that label, ${brand.productName} can no longer start. Choose a folder outside the installation folder as the workspace.`)
     : t('更新会替换安装目录中的文件，卸载会删除整个安装目录，放在其中的数据会随之丢失。请选择安装目录以外的文件夹作为数据目录。',
       'Updates replace the files in the installation folder and uninstalling removes it, so data kept there would be lost. Choose a folder outside the installation folder as the data directory.')
   return {
-    title: 'DSH NEXT',
+    title: brand.productName,
     message: purpose === 'workspace' ? t('不能用这个文件夹作为工作区', 'This folder cannot be the workspace') : t('不能用这个文件夹作为数据目录', 'This folder cannot be the data directory'),
     detail: [relation, reason, t(`安装目录：${program}`, `Installation folder: ${program}`)].join('\n\n'),
     buttons: [t('重新选择', 'Choose another folder'), t('取消', 'Cancel')],

@@ -16423,6 +16423,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@yundashi/dsh-yunwork-platform@file:../vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.caeae077feb56.re7c3fbf4.tgz::locator=dsh-desktop-next%40workspace%3Adsh-desktop-next":
+  version: 0.1.0
+  resolution: "@yundashi/dsh-yunwork-platform@file:../vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.caeae077feb56.re7c3fbf4.tgz#../vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.caeae077feb56.re7c3fbf4.tgz::hash=96937a&locator=dsh-desktop-next%40workspace%3Adsh-desktop-next"
+  peerDependencies:
+    "@deepseek-ai/cordis": 4.2.0-alpha.1
+    "@deepseek-ai/dsh-client-ui-primitives": 0.2.3-alpha.2
+    "@deepseek-ai/dsh-credentials": 0.2.3-alpha.2
+    "@deepseek-ai/schemastery": ^3.20.0-alpha.1
+    react: 18.3.1
+  checksum: 10c0/cece33101767921ad361e07bf130ef8cde0f388655a10099f033da3923951a15d812c2957c0f311ebb908c08bf64eaee1cd2ba1abd8e9c179172a7aee6f8df5f
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^4.0.0":
   version: 4.0.0
   resolution: "abbrev@npm:4.0.0"
@@ -18289,6 +18302,7 @@ __metadata:
     "@types/react": "npm:^18"
     "@types/react-dom": "npm:^18"
     "@vitejs/plugin-react": "npm:^6"
+    "@yundashi/dsh-yunwork-platform": "file:../vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.caeae077feb56.re7c3fbf4.tgz"
     anser: "npm:^2.3.5"
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
@@ -18854,25 +18868,6 @@ __metadata:
     "@deepseek-ai/schemastery":
       optional: true
   checksum: 10c0/8a396b87fd93b971c22ca44a20626c8e21a5e33aed48dd32bc976925e182b4e2a7608d7095ee8ffeb27412c5a2719c9883e9096e64776974c8349120c928f03a
-  languageName: node
-  linkType: hard
-
-"dshmarket@patch:dshmarket@npm%3A1.80.0#./.yarn/patches/dshmarket-desktop.patch::locator=deepseek-harness-desktop%40workspace%3A.":
-  version: 1.80.0
-  resolution: "dshmarket@patch:dshmarket@npm%3A1.80.0#./.yarn/patches/dshmarket-desktop.patch::version=1.80.0&hash=35b412&locator=deepseek-harness-desktop%40workspace%3A."
-  dependencies:
-    js-yaml: "npm:^4.3.2"
-    undici: "npm:^7.30.2"
-  peerDependencies:
-    "@deepseek-ai/cordis": ^4.0.1
-    "@deepseek-ai/dsh-settings": ^0.1.0-rc.7 || ^0.1.1-rc.2 || ^0.1.2-alpha.2 || ^0.2.0-rc.1 || ^0.2.1-alpha.3 || ^0.2.1-rc.1
-    "@deepseek-ai/schemastery": ^3.18.1
-  peerDependenciesMeta:
-    "@deepseek-ai/dsh-settings":
-      optional: true
-    "@deepseek-ai/schemastery":
-      optional: true
-  checksum: 10c0/aa223f5c4dba947ba874437a2c8b07b704452b7bc8475672296784879c0469cc6f254103de56136148c40d73d1aa38c30da0ae19a13d6586d3268bf5a661015f
   languageName: node
   linkType: hard
 

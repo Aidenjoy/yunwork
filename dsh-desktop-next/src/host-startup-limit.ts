@@ -3,6 +3,10 @@
  * Upstream Desktop waits for its Host without a limit; the 60-second limit is the Desktop's own.
  */
 
+// The default name, from the module a renderer may read: this file is in the client bundle, so it cannot ask the
+// resolver, which reads the contract from disk. The caller in the main process passes the resolved name.
+import { UPSTREAM_BRAND } from './brand-defaults.ts'
+
 /** Seconds a Host start may take, or `'none'` to wait for it like upstream Desktop. */
 export type HostStartupTimeout = number | 'none'
 
@@ -146,25 +150,26 @@ export class DesktopHostStartupTimeoutError extends Error {
  * @param language - The application language.
  * @param platform - Where the recovery assistant's menu lives.
  * @param trayAvailable - Whether a tray icon offers that menu.
+ * @param productName - The application's name, which the copy names twice.
  * @returns The system notification for a start that is still going.
  */
-export function startupNoticeCopy(notice: DesktopStartupNotice, language: string, platform: string, trayAvailable: boolean): { title: string; body: string } {
+export function startupNoticeCopy(notice: DesktopStartupNotice, language: string, platform: string, trayAvailable: boolean, productName = UPSTREAM_BRAND.productName): { title: string; body: string } {
   const zh = language.toLowerCase().startsWith('zh')
   const ids = notice.pending?.map(entry => entry.id) ?? []
   const named = ids.slice(0, 2).join(zh ? '、' : ', ')
   const loading = ids.length === 0 ? ''
     : zh ? `仍在加载 ${named}${ids.length > 2 ? ` 等 ${String(ids.length)} 个插件` : ''}。`
       : `Still loading ${named}${ids.length > 2 ? ` and ${String(ids.length - 2)} more` : ''}. `
-  const menu = platform === 'darwin' ? zh ? '菜单栏图标或 DSH NEXT 菜单' : 'the menu bar icon or the DSH NEXT menu'
+  const menu = platform === 'darwin' ? zh ? `菜单栏图标或 ${productName} 菜单` : `the menu bar icon or the ${productName} menu`
     : !trayAvailable ? undefined
       : platform === 'win32' ? zh ? '托盘图标（可能收在任务栏的隐藏图标中）' : 'the tray icon, which may be among the hidden taskbar icons'
         : zh ? '托盘图标' : 'the tray icon'
   const limit = notice.limit === 'none' ? '' : zh ? `，时限为 ${String(notice.limit)} 秒` : ` (limit: ${String(notice.limit)} seconds)`
   return zh ? {
-    title: 'DSH NEXT 仍在启动',
+    title: `${productName} 仍在启动`,
     body: `插件服务启动已超过 1 分钟${limit}。${loading}${menu === undefined ? '' : `如需排查，可从${menu}打开恢复助手。`}`,
   } : {
-    title: 'DSH NEXT is still starting',
+    title: `${productName} is still starting`,
     body: `The plugin service has been starting for over a minute${limit}. ${loading}${menu === undefined ? '' : `To investigate, open the recovery assistant from ${menu}.`}`.trimEnd(),
   }
 }

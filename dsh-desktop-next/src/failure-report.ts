@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { inspect } from 'node:util'
 import type { DesktopFailureStage } from '../../dsh-plugin-desktop/src/recovery-copy.ts'
 import { outsidePackage, stackPackages, type HostCrash } from './host-crash.ts'
+import { brand } from './brand.ts'
 import { startupEntriesSection, type DesktopStartupTimeoutFailure } from './host-startup-limit.ts'
 import { maskSecrets } from './mask-secrets.ts'
 import { privateDirectory } from './private-files.ts'
@@ -85,7 +86,7 @@ function packageLines(packages: readonly string[]): string[] {
  */
 export function renderFailureReport(input: FailureReportInput): string {
   const lines = [
-    'DSH NEXT failure report',
+    `${brand.productName} failure report`,
     'Review it before sharing: it can contain local paths and plugin output.',
     '',
     `time: ${input.time.toISOString()}`,

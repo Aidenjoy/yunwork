@@ -1,4 +1,5 @@
 import type { MenuItemConstructorOptions } from 'electron'
+import { UPSTREAM_BRAND } from './brand-defaults.ts'
 
 /** Built-in Desktop languages and the native-menu copy. */
 const en = { application: 'Application', edit: 'Edit', menuBar: 'Application menu',
@@ -30,8 +31,8 @@ export function resolveDesktopLocale(language: string) {
  * `role` menus stay English, so expand them with the same bilingual copy Windows
  * already uses; macOS keeps the roles and the system-owned translations.
  */
-export function roleApplicationMenuTemplate(appItems: MenuItemConstructorOptions[], language: string): MenuItemConstructorOptions[] {
-  const application: MenuItemConstructorOptions = { label: 'DSH NEXT', submenu: appItems }
+export function roleApplicationMenuTemplate(appItems: MenuItemConstructorOptions[], language: string, productName = UPSTREAM_BRAND.productName): MenuItemConstructorOptions[] {
+  const application: MenuItemConstructorOptions = { label: productName, submenu: appItems }
   if (process.platform !== 'linux') return [application, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]
   const { messages: m } = resolveDesktopLocale(language)
   return [

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '../../../dsh-plugin-desktop/src/native-
 import { DesktopFrame } from '../../../dsh-plugin-desktop/src/native-ui/shared/DesktopFrame.tsx'
 import { appIconLabel, DESKTOP_APP_ICONS, isDesktopAppIcon, type DesktopAppIcon } from '../app-icon.ts'
 import type { DesktopBridge, DesktopPreferences, DesktopState } from '../desktop-contract.ts'
+import { UPSTREAM_BRAND } from '../brand-defaults.ts'
 import { AppIconPreview } from '../client/app-icon-previews.tsx'
 import { installPluginControlsStyles } from '../client/plugin-controls-styles.ts'
 import { OFFICIAL_PLUGIN_INDEX } from '../upstream-family-labels.ts'
@@ -21,7 +22,7 @@ type Market = 'community' | 'dsh'
 // Keep official dialog dependencies out of recovery and the earlier setup pages.
 const DesktopPermissionsButton = lazy(() => import('../client/permissions.tsx').then(module => ({ default: module.DesktopPermissionsButton })))
 
-export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState, 'selected' | 'features' | 'onboardingComputerUse'> & { platform?: string; preferences?: Pick<DesktopPreferences, 'browserAccess' | 'networkExposure'> & Partial<Pick<DesktopPreferences, 'macosMaterial' | 'appIcon'>> }; locale: 'zh' | 'en'; bridge: Pick<DesktopBridge, 'command' | 'permissions'> }) {
+export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState, 'selected' | 'features' | 'onboardingComputerUse' | 'brand'> & { platform?: string; preferences?: Pick<DesktopPreferences, 'browserAccess' | 'networkExposure'> & Partial<Pick<DesktopPreferences, 'macosMaterial' | 'appIcon'>> }; locale: 'zh' | 'en'; bridge: Pick<DesktopBridge, 'command' | 'permissions'> }) {
   const t = (zh: string, en: string) => locale === 'zh' ? zh : en
   const platform = state.platform ?? document.documentElement.dataset.platform ?? new URLSearchParams(location.search).get('platform') ?? undefined
   const material = platform === 'darwin' ? (state.preferences?.macosMaterial ?? (document.documentElement.dataset.material === 'off' ? 'off' : 'transparent')) : 'off'
@@ -48,7 +49,7 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
   const disabled = busy || transitioning
   const steps = [t('欢迎', 'Welcome'), t('插件市场', 'Plugin market'), t('远程控制', 'Remote control'), t('Computer Use（Next）', 'Computer Use (Next)'), t('浏览器访问', 'Browser access'), t('恢复模式', 'Recovery')]
   const lastPage = steps.length - 1
-  const titles = [t('欢迎使用\nDSH NEXT', 'Welcome to\nDSH NEXT'), t('用插件，\n拓展更多可能。', 'Make room\nfor more possibilities.'), t('离开电脑，\n也能继续。', 'Keep going.\nAway from your desk.'), t('让 AI 帮你\n操作电脑。', 'Let AI work\non your desktop.'), t('在浏览器中，\n也能打开。', 'Open in a browser,\nwhen you need to.'), t('遇到问题，\n从这里恢复。', 'A way back,\nwhen you need it.')]
+  const titles = [t(`欢迎使用\n${state.brand?.productName ?? UPSTREAM_BRAND.productName}`, `Welcome to\n${state.brand?.productName ?? UPSTREAM_BRAND.productName}`), t('用插件，\n拓展更多可能。', 'Make room\nfor more possibilities.'), t('离开电脑，\n也能继续。', 'Keep going.\nAway from your desk.'), t('让 AI 帮你\n操作电脑。', 'Let AI work\non your desktop.'), t('在浏览器中，\n也能打开。', 'Open in a browser,\nwhen you need to.'), t('遇到问题，\n从这里恢复。', 'A way back,\nwhen you need it.')]
   const descriptions = [
     t(`为 Profile「${state.selected}」选好常用功能。\n几步设置，就可以开始。`, `Set up the essentials for Profile “${state.selected}”.\nA few choices, then you’re ready to go.`),
     t(`选择一个插件市场，浏览和安装社区插件；\n或配置${OFFICIAL_PLUGIN_INDEX.title.zh}。\n也可以暂不开启，以后在插件页面调整。`, `Choose a market to browse and install community plugins,\nor configure "${OFFICIAL_PLUGIN_INDEX.title.en}".\nYou can also leave it off and decide later in Plugins.`),

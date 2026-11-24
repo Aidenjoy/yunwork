@@ -2,6 +2,7 @@
 import type { MenuItemConstructorOptions } from 'electron'
 import type { DesktopCommand, DesktopState } from './desktop-contract.ts'
 import { updateAction, updateLabel } from './update-state.ts'
+import { brand } from './brand.ts'
 
 export function desktopMenu(state: DesktopState, language: string, show: () => void, run: (command: DesktopCommand) => void): MenuItemConstructorOptions[] {
   const t = (zh: string, en: string): string => language.toLowerCase().startsWith('zh') ? zh : en
@@ -10,7 +11,7 @@ export function desktopMenu(state: DesktopState, language: string, show: () => v
     ...(type === 'controls' ? { accelerator: 'CmdOrCtrl+,' } : {}),
   })
   return [
-    { label: t('打开 DSH NEXT', 'Open DSH NEXT'), click: show },
+    { label: t(`打开 ${brand.productName}`, `Open ${brand.productName}`), click: show },
     action(t('重新加载界面', 'Reload Interface'), 'reload', state.phase === 'ready'),
     action(t('退出并重启', 'Quit and Restart'), 'restart-app'),
     { type: 'separator' },

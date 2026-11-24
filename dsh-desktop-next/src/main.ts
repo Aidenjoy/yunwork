@@ -1,12 +1,13 @@
 /** Official Desktop transport with a Host-independent native shell. */
 import { installDesktopShortcuts } from './keyboard.ts'
+import { brand, contractPath } from './brand.ts'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { access, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { freemem, totalmem } from 'node:os'
-import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path'
 import { app, BrowserWindow, clipboard, crashReporter, dialog, ipcMain, Menu, nativeTheme, net, Notification, protocol, safeStorage, screen, session, shell, type IpcMainInvokeEvent, type MenuItemConstructorOptions, type OpenDialogOptions } from 'electron'
 import { appRequestHeaders, forwardWebRequest, serveWebDocument } from './web-document.ts'
 import { installAppDownloads } from './app-downloads.ts'
@@ -100,7 +101,15 @@ const dshArguments = dshCommandArguments(process.argv, process.platform, process
 if (dshArguments !== undefined) execDshCommand(dshArguments)
 const normalElectronData = join(home, 'electron-user-data')
 privateDirectory(normalElectronData)
-app.setName('DSH NEXT')
+app.setName(brand.productName)
+// The Host is a separate Node process, and a Node process cannot read a file inside the application archive. This
+// process may: it read the contract through Electron's file system. So it hands over the copy that exists on disk —
+// `asarUnpack` writes the same file beside the archive — and only falls back to the archived path when there is none.
+// Without a contract nothing is set, and the plugin falls back the same way this process does.
+if (contractPath !== undefined) {
+  const unpacked = contractPath.replace(`${sep}app.asar${sep}`, `${sep}app.asar.unpacked${sep}`)
+  process.env.YUNWORK_RUNTIME = unpacked !== contractPath && existsSync(unpacked) ? unpacked : contractPath
+}
 // Keep one application owner across normal and safe launches, before switching
 // Chromium storage to the disposable environment.
 app.setPath('userData', normalElectronData)
@@ -176,7 +185,7 @@ const crashDumps = join(normalElectronData, 'Crashpad')
 if (ownsInstance) {
   try {
     app.setPath('crashDumps', crashDumps)
-    startCrashReporting(crashReporter, { productName: 'DSH NEXT', version, dsh: dshVersion })
+    startCrashReporting(crashReporter, { productName: brand.productName, version, dsh: dshVersion })
   } catch (error) { console.error('Local crash reporting is unavailable', error) }
 }
 // Finder and Dock launches carry no login-shell exports. Reading them takes one login shell's startup
@@ -276,6 +285,10 @@ const updateInstaller = new NextUpdateInstaller({ platform: process.platform, ex
   log: error => runtime.diagnostics.append(String(error), 'warn') })
 const updates = new NextUpdates({ version, platform: process.platform, packaged: app.isPackaged, userData: electronData,
   portable: isWindowsPortableCopy(process.platform, app.isPackaged, process.execPath),
+  // A branded build does not update itself: the version check has one fixed endpoint, so a brand that names its own feed
+  // cannot be served by it — polling the upstream service on the brand's behalf is worse than not polling at all. An
+  // unbranded build behaves exactly as before.
+  disabled: contractPath !== undefined,
   downloads: updateDownloadDirectory(process.platform),
   arch: process.platform === 'darwin' ? macUpdateArch(process.arch, app.runningUnderARM64Translation)
     : process.platform === 'win32' && (process.arch === 'arm64' || process.arch === 'x64') ? process.arch : undefined,
@@ -328,7 +341,7 @@ function applyInstalledAppIcon(icon: DesktopAppIcon, dark: boolean): void {
     try {
       const result = platform === 'win32'
         ? syncWindowsShortcuts({ icon: packaged ? process.execPath : appWindowIcon(root, platform, icon, dark)!,
-          ours: [appWindowIcon(root, platform, 'default', true)!, appWindowIcon(root, platform, 'classic')!], execPath: process.execPath, name: 'DSH NEXT',
+          ours: [appWindowIcon(root, platform, 'default', true)!, appWindowIcon(root, platform, 'classic')!], execPath: process.execPath, name: brand.productName,
           directories: windowsShortcutDirectories({ desktop: app.getPath('desktop'), appData: app.getPath('appData') }, process.env), shell })
         : manifest.desktopName === undefined ? { changed: [], failed: [] }
           : syncLinuxDesktopEntry({ image: packaged ? undefined : appWindowIcon(root, platform, icon, dark), label, execPath: process.execPath,
@@ -359,7 +372,7 @@ function state(withLogs = false): DesktopState {
       usingDefaultDirectory, error: String(error), diagnosticsFile, notice: recoveryNotice }
   }
   return { ...runtime.state(), logs: withLogs ? runtime.diagnostics.snapshot() : '', recovery, dataDirectory: { source: dataSource, environmentHome: environmentHome === undefined ? null : resolve(environmentHome) },
-    onboarding, ...(onboarding ? { onboardingComputerUse } : {}), platform: process.platform, version,
+    onboarding, ...(onboarding ? { onboardingComputerUse } : {}), platform: process.platform, version, brand,
     ...(['darwin', 'win32', 'linux'].includes(process.platform) ? { updates: updates.snapshot() } : {}),
     trayAvailable: native.available, notificationsAvailable: Notification.isSupported() }
 }
@@ -446,7 +459,7 @@ function createWindow(preload: string, primary = false): BrowserWindow {
   if (primary) settledMainWindowState = restored
   const window = new BrowserWindow({ width: MAIN_WINDOW_WIDTH, height: MAIN_WINDOW_HEIGHT, minWidth: MAIN_WINDOW_MIN_WIDTH, minHeight: MAIN_WINDOW_MIN_HEIGHT,
     ...(restored?.bounds ?? {}),
-    show: false, title: 'DSH NEXT',
+    show: false, title: brand.productName,
     ...(process.platform !== 'darwin' ? { icon: appWindowIcon(root, process.platform, runtime.preferences.appIcon, systemDark()) } : {}),
     ...(!primary ? auxiliaryWindowChromeOptions() : {}),
     ...(process.platform === 'win32' && primary ? {
@@ -467,6 +480,9 @@ function createWindow(preload: string, primary = false): BrowserWindow {
   })
   // Keep the primitive ID: late console events can arrive after the native window is destroyed.
   const consoleWebContentsId = window.webContents.id
+  // The utility documents are static files whose `<title>` is the upstream name; this window is the brand's. The
+  // application document is left alone: its own client owns that title.
+  if (!primary) window.on('page-title-updated', event => { event.preventDefault() })
   let intervalStart = Date.now()
   let count = 0
   let failureCount = 0
@@ -734,7 +750,7 @@ function raiseDialogOwner(): BrowserWindow | undefined {
 
 async function confirmed(message: string, detail = t('将停止当前 Host，正在运行的任务会被中断。', 'This stops the current Host and interrupts running tasks.')): Promise<boolean> {
   const owner = raiseDialogOwner()
-  const options = { type: 'question' as const, title: 'DSH NEXT', message, detail,
+  const options = { type: 'question' as const, title: brand.productName, message, detail,
     buttons: [t('继续', 'Continue'), t('取消', 'Cancel')], defaultId: 1, cancelId: 1 }
   const result = await (owner === undefined ? dialog.showMessageBox(options) : dialog.showMessageBox(owner, options))
   return result.response === 0 && !quitting
@@ -750,7 +766,7 @@ async function chooseAgain(purpose: ProgramDirectoryPurpose, overlap: ProgramDir
 /** Say where Profile repair saved the previous configuration before the relaunch opens Desktop setup. */
 async function announceRepair(backup: string): Promise<void> {
   const owner = raiseDialogOwner()
-  const options = { type: 'info' as const, title: 'DSH NEXT', message: t('Profile 已修复', 'Profile repaired'),
+  const options = { type: 'info' as const, title: brand.productName, message: t('Profile 已修复', 'Profile repaired'),
     detail: t(`修复前的配置已备份到：\n${backup}\n\n应用将重启并打开设置向导，请重新选择插件市场、远程控制等功能。如需撤销修复，可在恢复助手的“快速恢复”页恢复修复前的配置。`,
       `The previous configuration was backed up to:\n${backup}\n\nThe app will restart and open the setup wizard, where you can choose Market, remote control and other features again. To undo the repair, restore the previous configuration from Quick recovery in the recovery assistant.`),
     buttons: [t('重启', 'Restart'), t('在文件夹中显示', 'Show in Folder')], defaultId: 0, cancelId: 0 }
@@ -775,7 +791,7 @@ async function promptAvailableUpdate(): Promise<void> {
   const owner = raiseDialogOwner()
   const options = {
     type: 'info' as const,
-    title: 'DSH NEXT',
+    title: brand.productName,
     message: updateLabel(snapshot, windowsLanguage),
     buttons: [manual ? t('前往下载', 'Open download page') : t('下载更新', 'Download update'), t('稍后', 'Later')],
     defaultId: 0,
@@ -833,7 +849,7 @@ async function performCommand(input: Record<string, unknown>, type: string, sour
         if (snapshot.phase === 'available' && (snapshot.installable || manualUpdate(snapshot, process.platform))) await promptAvailableUpdate()
         else {
           const owner = raiseDialogOwner()
-          const options = { type: 'info' as const, title: 'DSH NEXT', message: updateLabel(snapshot, windowsLanguage) }
+          const options = { type: 'info' as const, title: brand.productName, message: updateLabel(snapshot, windowsLanguage) }
           await (owner === undefined ? dialog.showMessageBox(options) : dialog.showMessageBox(owner, options))
         }
       }).catch(error => runtime.diagnostics.append(String(error), 'warn'))
@@ -883,7 +899,7 @@ async function performCommand(input: Record<string, unknown>, type: string, sour
     if (type === 'restart-app' || type === 'restart-recovery') {
       if (!await confirmed(type === 'restart-recovery'
         ? t('重启应用并进入恢复模式？', 'Restart the application in recovery mode?')
-        : t('现在重启 DSH NEXT？', 'Restart DSH NEXT now?'), type === 'restart-recovery'
+        : t(`现在重启 ${brand.productName}？`, `Restart ${brand.productName} now?`), type === 'restart-recovery'
         ? t('应用将先打开恢复助手，暂不加载当前 Profile 和插件。正在运行的任务会中断。', 'The recovery assistant will open before loading the current Profile and plugins. Running tasks will be interrupted.')
         : undefined)) return
       relaunch = relaunchArguments(process.argv.slice(1), type === 'restart-recovery', runtime.safeMode)
@@ -1090,7 +1106,7 @@ async function recoveryAction(input: Record<string, unknown>): Promise<void> {
   const action = input.action
   recoveryNotice = undefined
   if (action === 'restart') {
-    if (!await confirmed(runtime.safeMode ? t('退出安全模式并重启？', 'Exit Safe Mode and restart?') : t('现在重启 DSH NEXT？', 'Restart DSH NEXT now?'),
+    if (!await confirmed(runtime.safeMode ? t('退出安全模式并重启？', 'Exit Safe Mode and restart?') : t(`现在重启 ${brand.productName}？`, `Restart ${brand.productName} now?`),
       runtime.safeMode
         ? t('应用将返回原 Profile，并移除临时环境。临时数据不会保留，正在运行的任务会中断。', 'The app will return to the original Profile and remove the temporary environment. Temporary data will not be kept, and running tasks will be interrupted.')
         : t('应用将退出恢复助手，重新启动原 Profile。', 'The app will leave the recovery assistant and restart the original Profile.'))) return
@@ -1197,7 +1213,7 @@ async function recoveryAction(input: Record<string, unknown>): Promise<void> {
  */
 function execDshCommand(args: readonly string[]): never {
   if (dataLocation.error) {
-    console.error(`dsh-desktop-next: the data directory choice cannot be read; open DSH NEXT to repair it: ${dataLocation.error}`)
+    console.error(`dsh-desktop-next: the data directory choice cannot be read; open ${brand.productName} to repair it: ${dataLocation.error}`)
     return process.exit(1)
   }
   let profile: string | undefined
@@ -1227,7 +1243,7 @@ async function confirmDataDirectory(): Promise<boolean> {
   // No window exists yet; a relaunched macOS app is not activated on its own.
   if (process.platform === 'darwin') app.focus({ steal: true })
   confirmingDataDirectory = true
-  const { response } = await dialog.showMessageBox({ type: 'warning', title: 'DSH NEXT', noLink: true,
+  const { response } = await dialog.showMessageBox({ type: 'warning', title: brand.productName, noLink: true,
     message: t('数据目录与上次不同', 'The data directory differs from the last launch'),
     detail: [
       t(`本次：${home}（${source}）`, `This launch: ${home} (${source})`),
@@ -1309,7 +1325,7 @@ async function backupDataDirectory(): Promise<void> {
   if (failure) throw new Error(t('备份未完成：', 'Backup failed: ') + failure.message)
   runtime.diagnostics.append(`Backed up the data directory to ${destination}`)
   const done = raiseDialogOwner()
-  const notice = { type: 'info' as const, title: 'DSH NEXT', message: t('数据目录已备份', 'Data directory backed up'), detail: destination,
+  const notice = { type: 'info' as const, title: brand.productName, message: t('数据目录已备份', 'Data directory backed up'), detail: destination,
     buttons: [t('在文件夹中显示', 'Show in folder'), t('完成', 'Done')], defaultId: 1, cancelId: 1, noLink: true }
   void (done === undefined ? dialog.showMessageBox(notice) : dialog.showMessageBox(done, notice))
     .then(result => { if (result.response === 0) shell.showItemInFolder(destination) })
@@ -1601,7 +1617,7 @@ async function main(): Promise<void> {
   native.createTray()
   updates.start()
   Menu.setApplicationMenu(process.platform === 'win32' ? null : Menu.buildFromTemplate(
-    roleApplicationMenuTemplate(native.items(), windowsLanguage),
+    roleApplicationMenuTemplate(native.items(), windowsLanguage, brand.productName),
   ))
   if (process.platform === 'win32') {
     ipcMain.handle(IPC.windowsMenu, (event, name: unknown, x: unknown, y: unknown) => {

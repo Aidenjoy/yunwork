@@ -10,12 +10,18 @@ import { DEFAULT_HOST_STARTUP_TIMEOUT, HOST_STARTUP_TIMEOUT_PRESETS, hostStartup
 import { NextSettingsAdapter } from './settings-adapter.ts'
 import { DesktopPermissionsSection } from './permissions.tsx'
 import { useDesktopState } from './desktop-state.ts'
+import { UPSTREAM_BRAND } from '../brand-defaults.ts'
 import { NextUpdateSettings } from './updates.tsx'
 
-export function desktopTranslate(language: string): (key: string) => string {
+/**
+ * The Desktop settings page's copy. The product name comes from the caller: this file is part of the client bundle,
+ * which runs sandboxed without Node, so it may not import the resolver that reads the name from the contract. It may
+ * read the constants module, which imports nothing, for the name to use when the state has none yet.
+ */
+export function desktopTranslate(language: string, productName: string): (key: string) => string {
   const copy = language.startsWith('zh') ? zh : en
   return key => {
-    if (key === 'title') return language.startsWith('zh') ? 'DSH NEXT 设置' : 'DSH NEXT settings'
+    if (key === 'title') return language.startsWith('zh') ? `${productName} 设置` : `${productName} settings`
     if (key === 'presentationTitle') return language.startsWith('zh') ? '窗口外观' : 'Window appearance'
     if (key === 'windowMaterialBody') return language.startsWith('zh') ? '设置窗口背景效果，更改后立即生效。' : 'Set the window background effect. Changes apply immediately.'
     if (key === 'sidebarFooterCompat') return language.startsWith('zh') ? '侧边栏底部图标横向排列' : 'Arrange sidebar footer icons in a row'
@@ -36,7 +42,7 @@ export function desktopTranslate(language: string): (key: string) => string {
 
 export function NextDesktopSettings({ adapter, language, onOpenPlugins }: { adapter: NextSettingsAdapter; language: string; onOpenPlugins(): void }) {
   const state = useDesktopState(adapter)
-  const t = desktopTranslate(language)
+  const t = desktopTranslate(language, state?.brand?.productName ?? UPSTREAM_BRAND.productName)
   return <div data-next-desktop-settings=""><DesktopSettingsSection
     t={t} api={adapter.api} version={state?.version ?? ''} platform={state?.platform === 'darwin' || state?.platform === 'win32' ? state.platform : 'linux'}
     initialMode="compatibility"
@@ -59,7 +65,7 @@ export function NextDesktopSettings({ adapter, language, onOpenPlugins }: { adap
 
 export function NextDesktopActions({ adapter, language }: { adapter: NextSettingsAdapter; language: string }) {
   const state = useDesktopState(adapter)
-  return <DesktopNativeActions api={adapter.api} t={desktopTranslate(language)} placement="settings" terminalAvailable={state?.platform === 'darwin' || state?.platform === 'win32'} />
+  return <DesktopNativeActions api={adapter.api} t={desktopTranslate(language, state?.brand?.productName ?? UPSTREAM_BRAND.productName)} placement="settings" terminalAvailable={state?.platform === 'darwin' || state?.platform === 'win32'} />
 }
 
 function NextBrowserActions({ adapter, state, language }: { adapter: NextSettingsAdapter; state: DesktopState; language: string }) {

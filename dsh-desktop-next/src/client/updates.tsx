@@ -1,6 +1,7 @@
 import { Button } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { DesktopCommand, DesktopState } from '../desktop-contract.ts'
 import { manualUpdate, manualUpdateHint, releaseNotesUrl, updateAction, updateLabel } from '../update-state.ts'
+import { UPSTREAM_BRAND } from '../brand-defaults.ts'
 
 export function NextUpdateSettings({ state, language, run }: { state: DesktopState; language: string; run(command: DesktopCommand): void }) {
   const update = state.updates
@@ -11,7 +12,7 @@ export function NextUpdateSettings({ state, language, run }: { state: DesktopSta
   const action = updateAction(update)
   return <section className="dshDesktopSettingsGroup" data-next-updates>
     <h3>{t('应用更新', 'App updates')}</h3>
-    <p className="dshDesktopSettingsHint">DSH NEXT · {state.version}</p>
+    <p className="dshDesktopSettingsHint">{state.brand?.productName ?? UPSTREAM_BRAND.productName} · {state.version}</p>
     <p role={update.phase === 'error' ? 'alert' : 'status'}>{updateLabel(update, language)}</p>
     {update.phase === 'ready' && <p className="dshDesktopSettingsHint">{t('安装时会重启应用并中断正在运行的任务，Profile 和会话会保留。', 'Installation restarts the app and interrupts running tasks. Profiles and sessions are retained.')}</p>}
     {update.phase === 'downloading' && <progress style={{ width: '100%' }} aria-label={t('更新下载进度', 'Update download progress')} max={update.total ?? 1} value={update.total ? update.received ?? 0 : undefined} />}

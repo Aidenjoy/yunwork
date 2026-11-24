@@ -15,6 +15,8 @@ export interface NextUpdateOptions {
   packaged: boolean
   /** A Windows copy run from the portable ZIP: Setup cannot replace it, so its updates are downloaded by hand. */
   portable?: boolean
+  /** The brand names no feed of its own, so this build neither checks nor installs updates. */
+  disabled?: boolean
   userData: string
   /** Directory for downloaded installers; defaults to the update state directory in userData. */
   downloads?: string
@@ -43,7 +45,9 @@ export class NextUpdates {
   private disposed = false
   constructor(private readonly options: NextUpdateOptions) {
     const portable = options.portable === true
-    this.state = { phase: 'idle', installable: options.packaged && ['darwin', 'win32'].includes(options.platform) && !portable,
+    const disabled = options.disabled === true
+    this.state = { phase: 'idle', ...(disabled ? { disabled: true } : {}),
+      installable: !disabled && options.packaged && ['darwin', 'win32'].includes(options.platform) && !portable,
       ...(portable ? { portable } : {}) }
   }
   snapshot(): NextUpdateState { return { ...this.state } }
@@ -84,6 +88,7 @@ export class NextUpdates {
     this.options.changed()
   }
   start(): void {
+    if (this.options.disabled === true) { console.log('next-updates: this build names no update feed; update checks are disabled'); return }
     // Linux checks too, although its packages are downloaded from the release page rather than installed here.
     if (!this.options.packaged || !['darwin', 'win32', 'linux'].includes(this.options.platform) || this.timer || this.disposed) return
     void this.initializeCache().catch(this.options.log)
@@ -121,7 +126,7 @@ export class NextUpdates {
       arch: this.options.arch ?? (process.arch === 'arm64' ? 'arm64' : 'x64'), request: (url, init) => this.options.request(url, this.withArch(init)), signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]) })
   }
   check(background = false): Promise<void> {
-    if (this.state.phase === 'ready' || this.state.phase === 'installing') return Promise.resolve()
+    if (this.options.disabled === true || this.state.phase === 'ready' || this.state.phase === 'installing') return Promise.resolve()
     return this.run(async signal => {
       this.set({ phase: 'checking' })
       try {
@@ -140,6 +145,7 @@ export class NextUpdates {
     })
   }
   download(): Promise<void> {
+    if (this.options.disabled === true) return Promise.resolve()
     if (!this.state.installable) {
       this.set({ phase: 'error', error: this.options.packaged ? 'unsupported' : 'development' }); return Promise.resolve()
     }

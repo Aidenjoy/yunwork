@@ -24,3 +24,26 @@
   disabled: true
 - id: product-analytics
   disabled: true
+# 云大师's own Host plugin: the account, the key and the model routes. It is
+# installed as a `file:` tarball rather than a workspace, so this row is the
+# only thing that mounts it; the package's own cordis.patch.yml is not
+# consumed by any bundle here.
+- insert:
+    - id: yunwork-platform
+      name: '@yundashi/dsh-yunwork-platform'
+      config: {}
+- id: ui-brand-official
+  disabled: true
+# The upstream DeepSeek account plugin speaks the `/auth-api/v0/dsh/*` protocol.
+# Against the yundashi gateway `auth_init` answers 200 with a body its schema
+# rejects (`errorCode: 'protocol'`), so the sidebar's native login can only end
+# in "登录失败". The yunwork platform provides its own sign-in page and model
+# routes against `/api/desktop-auth/*`, which is what this deployment serves.
+# Disabled here — in the bundle layer that every Profile applies unconditionally —
+# rather than in a user home patch, so a packaged build behaves like dev.
+- id: ui-settings-account
+  disabled: true
+- id: deepseek-account
+  disabled: true
+- id: llm-deepseek-account
+  disabled: true

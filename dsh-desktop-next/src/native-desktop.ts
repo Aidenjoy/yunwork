@@ -11,6 +11,7 @@ import type { DesktopCommand, DesktopPreferences, DesktopState, DesktopNotificat
 import { windowMaterial } from './window-material.ts'
 import { IPC } from './ipc.ts'
 import { updateLabel } from './update-state.ts'
+import { brand } from './brand.ts'
 
 export function applyWindowMaterial(window: BrowserWindow, preferences: DesktopPreferences): void {
   const material = windowMaterial(preferences)
@@ -109,11 +110,11 @@ export class NativeDesktop {
   refresh(): void {
     this.syncAppIcon()
     if (process.platform !== 'win32') Menu.setApplicationMenu(Menu.buildFromTemplate(
-      roleApplicationMenuTemplate(this.items(), this.options.language()),
+      roleApplicationMenuTemplate(this.items(), this.options.language(), brand.productName),
     ))
     if (!this.available) return
     const state = this.options.state()
-    this.tray!.setToolTip(`DSH NEXT · ${state.selected} · ${state.phase}${state.updates && state.updates.phase !== 'idle' ? ` · ${updateLabel(state.updates, this.options.language())}` : ''}`)
+    this.tray!.setToolTip(`${brand.productName} · ${state.selected} · ${state.phase}${state.updates && state.updates.phase !== 'idle' ? ` · ${updateLabel(state.updates, this.options.language())}` : ''}`)
     if (process.platform === 'darwin') {
       const progress = state.updates
       this.tray!.setTitle(progress?.phase === 'downloading'
@@ -176,7 +177,7 @@ export class NativeDesktop {
    */
   notifyStartupSlow(notice: DesktopStartupNotice): () => void {
     if (!Notification.isSupported()) return () => {}
-    const notification = new Notification(startupNoticeCopy(notice, this.options.language(), process.platform, this.available))
+    const notification = new Notification(startupNoticeCopy(notice, this.options.language(), process.platform, this.available, brand.productName))
     this.notifications.add(notification)
     notification.once('click', this.options.show)
     notification.once('close', () => this.notifications.delete(notification))
@@ -188,8 +189,8 @@ export class NativeDesktop {
     if (!Notification.isSupported()) { onSelect(); return }
     const zh = this.options.language().toLowerCase().startsWith('zh')
     const notification = new Notification({
-      title: 'DSH NEXT',
-      body: zh ? `发现新版本 v${version}，点击下载更新。` : `DSH NEXT v${version} is available. Click to download the update.`,
+      title: brand.productName,
+      body: zh ? `发现新版本 v${version}，点击下载更新。` : `${brand.productName} v${version} is available. Click to download the update.`,
     })
     this.notifications.add(notification)
     notification.once('click', () => { this.options.show(); onSelect() })

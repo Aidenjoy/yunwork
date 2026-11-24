@@ -3,6 +3,7 @@
 import { createHash } from 'node:crypto'
 import { closeSync, createReadStream, lstatSync, openSync, readdirSync, readFileSync, readSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, relative, sep } from 'node:path'
+import { brand } from './brand.ts'
 
 /** Descriptor sealed at the payload root; a packaged application carries it inside `app.asar`. */
 export const DESKTOP_RUNTIME_FILE = 'desktop-runtime.json'
@@ -430,7 +431,7 @@ export function readInstalledPackageVersion(appRoot: string, name: string): stri
 export function verifyPackagedRuntimeIdentity(descriptorFile: string, identity: PackagedRuntimeIdentity): DesktopRuntimeDescriptor {
   const descriptor = readDesktopRuntime(descriptorFile)
   if (descriptor.release.version !== identity.version) {
-    throw new Error(`desktop runtime: payload ${descriptor.release.version} does not belong to DSH NEXT ${identity.version}`)
+    throw new Error(`desktop runtime: payload ${descriptor.release.version} does not belong to ${brand.productName} ${identity.version}`)
   }
   if (descriptor.release.dshVersion !== identity.dshVersion) {
     throw new Error(`desktop runtime: payload declares dsh ${descriptor.release.dshVersion} but ${identity.dshVersion} is installed`)

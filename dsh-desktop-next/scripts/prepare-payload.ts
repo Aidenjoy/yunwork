@@ -23,6 +23,19 @@ const SHELL_ENTRIES = ['lib', 'assets', 'build/app-icon.ico', 'build/app-icon.pn
   'build/classic/app-icon.ico', 'build/classic/app-icon.png', 'build/classic/app-icon-mac.png',
   'cordis.patch.yml', 'host.cordis.patch.yml', 'scripts/node-bin'] as const
 
+/**
+ * The runtime contract of a branded build, written into the package directory by the shell just before packaging.
+ *
+ * It travels inside the payload — which is the application archive — so a build that was given a brand names itself
+ * with no extra resource beside the executable. The entry is added only when the file is there: a bare upstream build,
+ * and every test that seals a payload, must keep exactly the inventory it had before.
+ */
+const BRAND_RUNTIME_ENTRY = 'yunwork-runtime.json'
+
+function shellEntries(desktopRoot: string): readonly string[] {
+  return existsSync(join(desktopRoot, BRAND_RUNTIME_ENTRY)) ? [...SHELL_ENTRIES, BRAND_RUNTIME_ENTRY] : SHELL_ENTRIES
+}
+
 /** Names electron-builder's walker never copies; the inventory has to agree with it. */
 const IGNORED_NAMES = new Set(['.DS_Store', '.gitkeep'])
 
@@ -256,7 +269,7 @@ export async function preparePayload(options: PreparePayloadOptions): Promise<De
     mkdirSync(output, { recursive: true })
   })
   packagingStepSync('payload:copy-shell', () => {
-    for (const entry of SHELL_ENTRIES) {
+    for (const entry of shellEntries(desktopRoot)) {
       const source = join(desktopRoot, ...entry.split('/'))
       if (!existsSync(source)) throw new Error(`Next payload: missing shell entry ${entry}`)
       copyTree(source, join(output, ...entry.split('/')), (path, name) => !IGNORED_NAMES.has(name) && nextRuntimeFileExclusion(`${entry}/${path}`, target) === undefined)

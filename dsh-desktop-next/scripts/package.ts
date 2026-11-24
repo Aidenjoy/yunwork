@@ -42,6 +42,46 @@ if (TEST_BUILD_VERSION !== undefined && !/^[0-9]+\.[0-9]+\.[0-9]+-next(?:\.[0-9]
   throw new Error(`DSH_NEXT_BUILD_VERSION must be x.y.z-next or x.y.z-next.N; received ${TEST_BUILD_VERSION}`)
 }
 const buildVersion = expectedNextVersion(desktopRoot)
+
+/**
+ * Brand packaging parameters, when the shell supplies them through `YUNWORK_BRAND_CONFIG`.
+ *
+ * Only scalars, because that is all the CLI can add: the product name, the bundle id, the shortcut label, the artifact
+ * names and the Debian package name. The runtime contract itself travels inside the payload, so nothing here has to add
+ * an extra resource — which the CLI cannot do for an array anyway.
+ *
+ * Without the variable the flags are empty, so packaging stays exactly what it was. The artifact names keep their
+ * macros as literal text: electron-builder substitutes them, not this file.
+ */
+const BRAND_CONFIG = process.env.YUNWORK_BRAND_CONFIG
+
+/** Electron-builder's own placeholders, written in single quotes so nothing here interpolates them. */
+const VERSIONED_ARTIFACT = '-${version}-${arch}.${ext}'
+const PORTABLE_ARTIFACT = '-${version}-${arch}-Portable.${ext}'
+
+let brandReported = false
+
+function brandFlags(): string[] {
+  if (BRAND_CONFIG === undefined) return []
+  const brand = JSON.parse(readFileSync(BRAND_CONFIG, 'utf8')) as { productName?: string; appId?: string; artifactPrefix?: string }
+  const flags: string[] = []
+  if (brand.appId !== undefined) flags.push(`--config.appId=${brand.appId}`)
+  if (brand.productName !== undefined) {
+    flags.push(`--config.productName=${brand.productName}`, `--config.nsis.shortcutName=${brand.productName}`)
+  }
+  if (brand.artifactPrefix !== undefined) {
+    flags.push(`--config.mac.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
+      `--config.win.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
+      `--config.linux.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
+      // Debian package names are lowercase by policy, independent of how the product is written.
+      `--config.deb.packageName=${brand.artifactPrefix.toLowerCase()}`)
+  }
+  if (!brandReported) {
+    brandReported = true
+    console.log(`Packaging as ${brand.productName ?? '(upstream name)'} / ${brand.appId ?? '(upstream id)'}`)
+  }
+  return flags
+}
 const run = (command: string, args: readonly string[], cwd: string, env: NodeJS.ProcessEnv): void => {
   // Windows resolves the CLI path with backslashes.
   const isBuilder = args.includes('electron-builder') || args.some(arg => arg.replaceAll('\\', '/').endsWith('electron-builder/cli.js'))
@@ -49,9 +89,10 @@ const run = (command: string, args: readonly string[], cwd: string, env: NodeJS.
   // that flag before it calls beforeBuild, and only a beforeBuild answer makes it leave node_modules
   // to the prepared payload, so Next drops the flag: its beforeBuild hook declines the rebuild too.
   const withoutRebuildFlag = isBuilder ? args.filter(arg => arg !== '--config.npmRebuild=false') : args
-  const forwarded = TEST_BUILD_VERSION !== undefined && isBuilder
+  const forwarded: string[] = TEST_BUILD_VERSION !== undefined && isBuilder
     ? [...withoutRebuildFlag, `--config.extraMetadata.version=${TEST_BUILD_VERSION}`, `--config.buildVersion=${TEST_BUILD_VERSION}`]
-    : withoutRebuildFlag
+    : [...withoutRebuildFlag]
+  if (isBuilder) forwarded.push(...brandFlags())
   if (TEST_BUILD_VERSION !== undefined && isBuilder) console.log(`Packaging with test build version ${TEST_BUILD_VERSION}; source manifests are unchanged.`)
   const isPreflight = (args.includes('run') && args.includes('check')) || args.some(arg => arg.includes('check:win-package') || arg.includes('check:linux-package'))
   const stage = isBuilder ? 'builder:total' : isPreflight ? 'build:package-preflight' : 'package:command'

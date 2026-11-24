@@ -21,7 +21,8 @@ import { installPrimitivesStyles } from '../client/upstream-family.ts'
 
 function App() {
   const adapter = useMemo(() => window.desktopNext ? new NextSettingsAdapter(window.desktopNext) : undefined, [])
-  if (!adapter) return <Alert variant="destructive"><AlertDescription>Desktop controls could not load. Restart DSH NEXT.</AlertDescription></Alert>
+  // No state means no bridge either, so this is the one place that cannot name the product: say what to do instead.
+  if (!adapter) return <Alert variant="destructive"><AlertDescription>Desktop controls could not load. Restart the application.</AlertDescription></Alert>
   return <NativePages adapter={adapter} />
 }
 
