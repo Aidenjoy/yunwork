@@ -2,5 +2,7 @@
   "apiBaseUrl": "http://192.168.110.152:3000",
   "authBaseUrl": "http://192.168.110.152:3000",
   "insecure": true,
-  "updateFeedUrl": null
+  "updateFeedUrl": null,
+  "anywhereServerUrl": "http://192.168.110.152:5174",
+  "anywhereWebUrl": "http://192.168.110.152:5174"
 }

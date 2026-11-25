@@ -9,5 +9,6 @@
   "backgroundColor": "#F5F5F5",
   "themeColor": "#2D97D3",
   "artifactPrefix": "yundashi-agent",
-  "profileKey": "yundashi"
+  "profileKey": "yundashi",
+  "anywhereRuntimeType": "yunwork"
 }

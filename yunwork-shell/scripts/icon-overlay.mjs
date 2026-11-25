@@ -22,6 +22,9 @@ const STATE_FILE = 'overlay-state.json'
  * @returns The number of files written and removed.
  */
 export function applyOverlay ({ overlayDir, desktopRoot, backupDir }) {
+  if (existsSync(join(backupDir, STATE_FILE))) {
+    restoreOverlay({ desktopRoot, backupDir })
+  }
   const plan = JSON.parse(readFileSync(join(overlayDir, 'overlay.json'), 'utf8'))
   mkdirSync(backupDir, { recursive: true })
   /** Recorded before acting, so an interrupted run can still be undone exactly. */

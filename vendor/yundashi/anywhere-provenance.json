@@ -1,0 +1,9 @@
+{
+  "repository": "yuncontrol",
+  "commit": "f6e964704bdf66794b0edcb56074a305d9a29781",
+  "builtAt": "2026-11-25T05:16:29.972Z",
+  "filename": "agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz",
+  "sha256": "3571d06e9b054bcbf13929f641e7772a7e119c833c5ed7edca211e3153f3aac7",
+  "runtimePackage": "@agents-anywhere/dsh-bridge-next",
+  "version": "2.2.0"
+}

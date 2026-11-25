@@ -172,10 +172,18 @@ export function validateProfile (profile) {
   }
 
   // Plain http is only reachable on purpose: an intranet or loopback host, never a release build.
-  for (const field of ['apiBaseUrl', 'authBaseUrl']) {
+  for (const field of ['apiBaseUrl', 'authBaseUrl', 'anywhereServerUrl', 'anywhereWebUrl']) {
     const value = profile[field]
     if (typeof value === 'string' && value.startsWith('http://') && profile.insecure !== true) {
       problems.push(`${field} uses plain http but insecure is not true`)
+    }
+  }
+
+  for (const field of ['anywhereServerUrl', 'anywhereWebUrl']) {
+    const value = profile[field]
+    if (value !== undefined && value !== null) {
+      if (typeof value !== 'string' || value.trim() === '') problems.push(`${field} must be an absolute URL or null`)
+      else validateUrl(field, value, problems)
     }
   }
 
@@ -226,7 +234,7 @@ export function resolveProfile ({ env, environment = process.env, onWarning = ()
     merged[field] = coerceOverride(field, raw, merged[field])
   }
 
-  for (const field of ['apiBaseUrl', 'authBaseUrl', 'updateFeedUrl']) {
+  for (const field of ['apiBaseUrl', 'authBaseUrl', 'updateFeedUrl', 'anywhereServerUrl', 'anywhereWebUrl']) {
     if (merged[field] !== undefined && merged[field] !== null) merged[field] = normaliseBaseUrl(merged[field])
   }
 

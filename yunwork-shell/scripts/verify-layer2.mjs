@@ -26,7 +26,7 @@ const DEFAULT_BASE = 'master'
 /** Every file this layer may touch, with the exact `git diff --numstat` it is registered for. */
 const QUOTA = {
   "dsh-desktop-next/cordis.patch.yml": { added: 23, removed: 0 },
-  "dsh-desktop-next/package.json": { added: 2, removed: 0 },
+  "dsh-desktop-next/package.json": { added: 3, removed: 1 },
   "dsh-desktop-next/scripts/package.ts": { added: 43, removed: 2 },
   "dsh-desktop-next/scripts/prepare-payload.ts": { added: 14, removed: 1 },
   "dsh-desktop-next/src/app-downloads.ts": { added: 2, removed: 1 },
@@ -53,14 +53,17 @@ const QUOTA = {
   "dsh-desktop-next/src/update-installer.ts": { added: 6, removed: 4 },
   "dsh-desktop-next/src/update-state.ts": { added: 4, removed: 0 },
   "dsh-desktop-next/src/updates.ts": { added: 8, removed: 2 },
-  "yarn.lock": { added: 14, removed: 19 },
+  "yarn.lock": { added: 33, removed: 1 },
 }
 
 /** The prebuilt plugin tarball is registered by name alone: it has bytes, not line counts. */
-const BINARY_ALLOWANCE = new Set(['vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.bdcc4d6fa52c.tgz'])
+const BINARY_ALLOWANCE = new Set([
+  'vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.2a01f848dfc2.tgz',
+  'vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz',
+])
 
 /** Paths this layer owns: everything else in the diff belongs to the third layer or to upstream. */
-const isLayer2 = file => file.startsWith('dsh-desktop-next/') || file === 'yarn.lock' || file.startsWith('vendor/yundashi/')
+const isLayer2 = file => file.startsWith('dsh-desktop-next/') || file === 'yarn.lock' || (file.startsWith('vendor/yundashi/') && file.endsWith('.tgz'))
 
 /** The only files a brand literal may survive in, and why; every other occurrence has to be gone. */const LITERAL_ALLOWANCE = {
   // The single source of the upstream identity; every fallback in this layer reads it.

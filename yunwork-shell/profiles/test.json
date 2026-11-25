@@ -1,6 +1,8 @@
 {
-  "apiBaseUrl": "http://192.168.110.152:3000",
-  "authBaseUrl": "http://192.168.110.152:3000",
+  "apiBaseUrl": "https://token.yundashi.com",
+  "authBaseUrl": "https://token.yundashi.com",
   "insecure": true,
-  "updateFeedUrl": null
+  "updateFeedUrl": null,
+  "anywhereServerUrl": "http://192.168.110.152:5174",
+  "anywhereWebUrl": "http://192.168.110.152:5174"
 }

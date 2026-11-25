@@ -216,18 +216,9 @@ async function main (argv) {
     environment.YUNWORK_BRAND_CONFIG = brandConfigPath
   }
 
-  // Every `*:next` script first resolves Agents-Anywhere's `main`, which is a network lookup and a moving target. The
-  // provenance file records the commit we actually packaged, so development and directory builds name it and build the
-  // same bytes twice. A release keeps the variable unset: its verification step rejects anything but the official `main`.
-  const provenance = join(REPOSITORY_ROOT, 'vendor', 'agents-anywhere', 'provenance.json')
-  let anchoredCommit
-  if (options.command !== 'dist' && existsSync(provenance)) {
-    const commit = JSON.parse(readFileSync(provenance, 'utf8')).commit
-    if (typeof commit === 'string' && /^[0-9a-f]{40}$/u.test(commit)) {
-      environment.DSH_AA_SOURCE_REF = commit
-      anchoredCommit = commit
-    }
-  }
+  // `DSH_AA_SOURCE_REF` is no longer anchored to vendor/agents-anywhere/provenance.json;
+  // yunwork uses its own @agents-anywhere/dsh-bridge-next tarball in vendor/yundashi/.
+  const anchoredCommit = undefined
 
   const manager = packageManager()
   const tokens = [...manager.prefix, script, ...options.passthrough]
@@ -246,10 +237,12 @@ async function main (argv) {
 
   if (options.dryRun === true) return 0
 
-  // The base creates its own data directory, but failing here with a clear path beats a launch
-  // that dies later inside Electron with a permission error.
-  mkdirSync(home, { recursive: true, mode: 0o700 })
-  if (seedDesktopProfile(home)) process.stdout.write('run: seeded a fresh desktop profile with the market and remote-control bundles\n')
+  if (!packaging) {
+    // The base creates its own data directory, but failing here with a clear path beats a launch
+    // that dies later inside Electron with a permission error.
+    mkdirSync(home, { recursive: true, mode: 0o700 })
+    if (seedDesktopProfile(home)) process.stdout.write('run: seeded a fresh desktop profile with the market and remote-control bundles\n')
+  }
 
   // Both artefacts of a packaged build live in the base only while it runs: the icons replace tracked artwork, and the
   // contract is a file the payload copies. `finally` puts the tree back even when the base command fails.

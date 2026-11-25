@@ -21,7 +21,7 @@ const RUNTIME_FILE = join(BUILD_DIRECTORY, 'yunwork-runtime.json')
 const ASSET_DIRECTORY = join(SHELL_ROOT, 'assets')
 
 /** Bumped only when the shape of the runtime file changes in a way the reader must notice. */
-const RUNTIME_VERSION = 1
+const RUNTIME_VERSION = 2
 
 /**
  * The files copied from the brand source. They are not wired into packaging yet, so a missing one
@@ -58,6 +58,9 @@ function toRuntime (profile) {
     authBaseUrl: profile.authBaseUrl,
     insecure: profile.insecure === true,
     updateFeedUrl: profile.updateFeedUrl ?? null,
+    anywhereRuntimeType: profile.anywhereRuntimeType ?? 'yunwork',
+    anywhereServerUrl: profile.anywhereServerUrl ?? null,
+    anywhereWebUrl: profile.anywhereWebUrl ?? null,
     env: profile.env,
   }
 }
