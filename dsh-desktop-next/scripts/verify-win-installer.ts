@@ -1,4 +1,4 @@
-import { closeSync, openSync, readFileSync, readSync } from 'node:fs'
+import { closeSync, existsSync, openSync, readFileSync, readSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { unzipSync } from 'fflate'
@@ -12,6 +12,11 @@ const { version: sourceVersion } = JSON.parse(readFileSync(join(root, 'package.j
 // from the source tree (see scripts/package.ts); electron-builder names the
 // artifact after that override, so the verifier must follow it too.
 const version = process.env.DSH_NEXT_BUILD_VERSION ?? sourceVersion
+const runtimeContractPath = join(root, 'yunwork-runtime.json')
+const productName = existsSync(runtimeContractPath)
+  ? ((JSON.parse(readFileSync(runtimeContractPath, 'utf8')) as { productName?: string }).productName ?? 'DSH NEXT')
+  : 'DSH NEXT'
+const executableName = `${productName}.exe`
 const verifyMode = process.env.DSH_PACKAGE_VERIFY_MODE ?? 'win'
 if (verifyMode === 'win-portable') {
   const archivePath = join(root, 'dist', `DSH-NEXT-${version}-${process.arch}-Portable.zip`)
@@ -23,11 +28,11 @@ if (verifyMode === 'win-portable') {
     closeSync(fd)
   }
   if (!header.equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]))) throw new Error(`Next portable archive is not a ZIP archive: ${archivePath}`)
-  const binary = unzipSync(readFileSync(archivePath), { filter: entry => entry.name === 'DSH NEXT.exe' })['DSH NEXT.exe']
+  const binary = unzipSync(readFileSync(archivePath), { filter: entry => entry.name === executableName })[executableName]
   if (binary === undefined) throw new Error(`Portable archive has no application executable: ${archivePath}`)
   assertWindowsArchitectureBuffer(Buffer.from(binary.buffer, binary.byteOffset, binary.byteLength), windowsArchitecture(), archivePath)
-  assertPortableExecutable(join(root, 'dist', windowsUnpackedDirectory(), 'DSH NEXT.exe'), 'Next application')
-  assertWindowsArchitecture(join(root, 'dist', windowsUnpackedDirectory(), 'DSH NEXT.exe'), process.arch === 'arm64' ? 'arm64' : 'x64')
+  assertPortableExecutable(join(root, 'dist', windowsUnpackedDirectory(), executableName), 'Next application')
+  assertWindowsArchitecture(join(root, 'dist', windowsUnpackedDirectory(), executableName), process.arch === 'arm64' ? 'arm64' : 'x64')
 } else if (verifyMode === 'linux') {
   // Linux packages the host CPU; electron-builder spells x64 as x86_64 and amd64 and keeps arm64 as is.
   const arm64 = process.arch === 'arm64'
@@ -37,6 +42,6 @@ if (verifyMode === 'win-portable') {
   assertElfExecutable(join(root, 'dist', arm64 ? 'linux-arm64-unpacked' : 'linux-unpacked', 'dsh-desktop-next'), 'Next Linux application')
 } else {
   assertPortableExecutable(join(root, 'dist', `DSH-NEXT-${version}-${process.arch}-Setup.exe`), 'Next NSIS installer')
-  assertPortableExecutable(join(root, 'dist', windowsUnpackedDirectory(), 'DSH NEXT.exe'), 'Next application')
-  assertWindowsArchitecture(join(root, 'dist', windowsUnpackedDirectory(), 'DSH NEXT.exe'), process.arch === 'arm64' ? 'arm64' : 'x64')
+  assertPortableExecutable(join(root, 'dist', windowsUnpackedDirectory(), executableName), 'Next application')
+  assertWindowsArchitecture(join(root, 'dist', windowsUnpackedDirectory(), executableName), process.arch === 'arm64' ? 'arm64' : 'x64')
 }

@@ -17,7 +17,7 @@ interface PackContext {
   /** electron-builder's `Arch`. */
   arch: number
   electronPlatformName: string
-  packager: { projectDir: string; appInfo: { version: string } }
+  packager: { projectDir: string; appInfo: { version: string; productFilename?: string } }
 }
 
 /** Names of electron-builder's `Arch` values that macOS packages use. */
@@ -38,7 +38,8 @@ const BUILDER_ARCHS: Readonly<Record<number, string>> = { 1: 'x64', 3: 'arm64', 
  * @param context - Electron Builder's afterPack context.
  */
 export default async function afterPack(context: PackContext): Promise<void> {
-  const resources = context.electronPlatformName === 'darwin' ? join(context.appOutDir, 'DSH NEXT.app/Contents/Resources') : join(context.appOutDir, 'resources')
+  const productFilename = context.packager.appInfo.productFilename ?? 'DSH NEXT'
+  const resources = context.electronPlatformName === 'darwin' ? join(context.appOutDir, `${productFilename}.app/Contents/Resources`) : join(context.appOutDir, 'resources')
   if (!existsSync(join(resources, 'app.asar'))) throw new Error('Next must package its application into app.asar like upstream Desktop')
   if (context.electronPlatformName === 'darwin' && /-(?:x64|arm64)-temp$/u.test(context.appOutDir)) {
     // electron-builder's universal packager immediately merges the two temporary per-CPU bundles
@@ -54,7 +55,7 @@ export default async function afterPack(context: PackContext): Promise<void> {
   }
   if (platform === 'win32') {
     const arch = windowsArchitecture()
-    assertWindowsArchitecture(join(context.appOutDir, 'DSH NEXT.exe'), arch)
+    assertWindowsArchitecture(join(context.appOutDir, `${productFilename}.exe`), arch)
     const unpacked = join(resources, 'app.asar.unpacked')
     // The official Computer Use helper runs as a .NET process of its own and is checked on its own terms.
     const helperRoot = cuaWindowsHelperRoot(unpacked)

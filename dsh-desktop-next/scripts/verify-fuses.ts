@@ -52,9 +52,10 @@ function runPackagedNode(path: string, args: readonly string[], timeout: number,
   }))
 }
 
-async function verifyFinalArtifacts(result: { outDir: string }): Promise<string[]> {
-  const paths = ['mac/DSH NEXT.app/Contents/MacOS/DSH NEXT', 'mac-arm64/DSH NEXT.app/Contents/MacOS/DSH NEXT',
-    'mac-universal/DSH NEXT.app/Contents/MacOS/DSH NEXT', `${windowsUnpackedDirectory()}/DSH NEXT.exe`, 'linux-unpacked/dsh-desktop-next',
+async function verifyFinalArtifacts(result: { outDir: string; configuration?: { productName?: string } }): Promise<string[]> {
+  const productName = result.configuration?.productName ?? 'DSH NEXT'
+  const paths = [`mac/${productName}.app/Contents/MacOS/${productName}`, `mac-arm64/${productName}.app/Contents/MacOS/${productName}`,
+    `mac-universal/${productName}.app/Contents/MacOS/${productName}`, `${windowsUnpackedDirectory()}/${productName}.exe`, 'linux-unpacked/dsh-desktop-next',
     'linux-arm64-unpacked/dsh-desktop-next']
   // A macOS release packages one CPU after another into the same output directory, and each run verifies the
   // application it packaged, which afterPack has checked: macOS packages always pass through afterPack.
@@ -119,6 +120,6 @@ async function verifyFinalArtifacts(result: { outDir: string }): Promise<string[
   return []
 }
 
-export default async function afterAllArtifactBuild(result: { outDir: string }): Promise<string[]> {
+export default async function afterAllArtifactBuild(result: { outDir: string; configuration?: { productName?: string } }): Promise<string[]> {
   return packagingStep('verify:final-artifacts', () => verifyFinalArtifacts(result))
 }
