@@ -59,7 +59,7 @@ const QUOTA = {
 /** The prebuilt plugin tarball is registered by name alone: it has bytes, not line counts. */
 const BINARY_ALLOWANCE = new Set([
   'vendor/yundashi/yundashi-dsh-yunwork-platform-0.1.0-desktop.2a01f848dfc2.tgz',
-  'vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz',
+  'vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.1-desktop.cefb8a7c734fa.r08887e32.tgz',
 ])
 
 /** Paths this layer owns: everything else in the diff belongs to the third layer or to upstream. */

@@ -139,9 +139,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@agents-anywhere/dsh-bridge-next@file:vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz::locator=deepseek-harness-desktop%40workspace%3A.":
-  version: 2.2.0
-  resolution: "@agents-anywhere/dsh-bridge-next@file:vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz#vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz::hash=2334f0&locator=deepseek-harness-desktop%40workspace%3A."
+"@agents-anywhere/dsh-bridge-next@file:vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.1-desktop.cefb8a7c734fa.r08887e32.tgz::locator=deepseek-harness-desktop%40workspace%3A.":
+  version: 2.2.1
+  resolution: "@agents-anywhere/dsh-bridge-next@file:vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.1-desktop.cefb8a7c734fa.r08887e32.tgz#vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.1-desktop.cefb8a7c734fa.r08887e32.tgz::hash=a11086&locator=deepseek-harness-desktop%40workspace%3A."
   dependencies:
     "@dataiku/uv": "npm:0.12.0"
     clsx: "npm:2.1.1"
@@ -153,7 +153,7 @@ __metadata:
     "@deepseek-ai/dsh-typert-protocol": ">=0.2.0-rc.1 <0.3.0-0"
     "@deepseek-ai/schemastery": ~3.18.4 || ~3.19.0 || ~3.20.0-alpha.1
     react: ^18.3.1
-  checksum: 10c0/5cc483367c028a8e0ea2d98f70d3faa889beb8e23659ee4025c00b50b20a920bb868726c90e950fdcd5bf31ad76857debc19cc056b96f38f5c570ed0130559fb
+  checksum: 10c0/7b60c8c9b0087a83352862e4633af2d3e467d9f493f4e7efa87bfca6fc68380f969d4222f1c65dd998c8ce27b7e97cb401f9aa6ccf3941a8a74489ce9dc85f8e
   languageName: node
   linkType: hard
 
@@ -18117,7 +18117,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "dsh-desktop-next@workspace:dsh-desktop-next"
   dependencies:
-    "@agents-anywhere/dsh-bridge-next": "file:../vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz"
+    "@agents-anywhere/dsh-bridge-next": "file:../vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.1-desktop.cefb8a7c734fa.r08887e32.tgz"
     "@base-ui/react": "npm:^1.7.0"
     "@deepseek-ai/cordis": "npm:4.2.0-alpha.1"
     "@deepseek-ai/cordis-plugin-group": "npm:1.2.0-alpha.1"

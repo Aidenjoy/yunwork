@@ -1520,7 +1520,7 @@
     "@deepseek-ai/dsh-wecom@npm:0.2.3-alpha.2": "file:vendor/dsh-runtime/0.2.3-alpha.2/deepseek-ai-dsh-wecom-0.2.3-alpha.2.tgz",
     "@deepseek-ai/dsh-wecom@npm:^0.2.3-alpha.2": "file:vendor/dsh-runtime/0.2.3-alpha.2/deepseek-ai-dsh-wecom-0.2.3-alpha.2.tgz",
     "dshmarket@npm:1.80.0": "patch:dshmarket@npm%3A1.80.0#./.yarn/patches/dshmarket-desktop.patch",
-    "dsh-desktop-next/@agents-anywhere/dsh-bridge-next": "file:vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.0-desktop.cf6e964704bdf.r3571d06e.tgz"
+    "dsh-desktop-next/@agents-anywhere/dsh-bridge-next": "file:vendor/yundashi/agents-anywhere-dsh-bridge-next-2.2.1-desktop.cefb8a7c734fa.r08887e32.tgz"
   },
   "dependenciesMeta": {
     "@deepseek-ai/dsh-subprocess-local": {
