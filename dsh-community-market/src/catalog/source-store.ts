@@ -1,5 +1,6 @@
 import { validateLocalSourceRecords } from '../contracts/validate.js'
 import type { CatalogSourceStore, LocalSourceRecord } from '../contracts/types.js'
+import { probeYunworkMarketContract } from '../yunwork-contract.js'
 import type { MarketStateStore } from './state-store.js'
 
 /**
@@ -24,11 +25,77 @@ export function normalizeActiveSourceRecords(
  * right shape", the local-source contract answers "is this a registry market is
  * willing to act on", and only the second one is allowed to reject.
  */
+export function defaultYunworkSourceRecord(): LocalSourceRecord | undefined {
+  const contract = probeYunworkMarketContract()
+  if (contract.manifestUrl === undefined) return undefined
+  const origin = new URL(contract.manifestUrl).origin
+  return {
+    sourceRecordId: '00000000-0000-4000-8000-000000000001',
+    providerId: 'com.yundashi.plugins',
+    adapterId: 'market.standard-http-v1',
+    registrationKind: 'user-added',
+    manifestUrl: contract.manifestUrl,
+    manifest: {
+      manifestVersion: '1.0.0',
+      providerId: 'com.yundashi.plugins',
+      name: `${contract.displayName}插件市场`,
+      attribution: { name: contract.displayName, url: origin },
+      transport: {
+        kind: 'https-json',
+        method: 'GET',
+        endpoint: `${origin}/api/v2/plugins/v1/plugins`,
+      },
+      query: {
+        supported: ['q', 'category', 'cursor', 'limit'],
+        sorts: [],
+        defaultLimit: 20,
+        maxLimit: 50,
+      },
+    },
+    enabled: true,
+    order: 0,
+  }
+}
+
 export class PersistentCatalogSourceStore implements CatalogSourceStore {
-  constructor(private readonly state: MarketStateStore) {}
+  private defaultSeeded = false
+
+  constructor(
+    private readonly state: MarketStateStore,
+    private readonly defaultSourceRecord: () => LocalSourceRecord | undefined = defaultYunworkSourceRecord,
+  ) {}
 
   async load(): Promise<readonly LocalSourceRecord[]> {
     const records = [...this.state.getSources()]
+    if (!this.defaultSeeded && records.length === 0) {
+      this.defaultSeeded = true
+      const seeded = this.defaultSourceRecord()
+      if (seeded !== undefined) {
+        validateLocalSourceRecords([seeded])
+        await this.state.setSources([seeded])
+        return [seeded]
+      }
+    } else if (records.length > 0) {
+      this.defaultSeeded = true
+      const contractUrl = probeYunworkMarketContract().manifestUrl
+      let migratedAny = false
+      const migrated = records.map(record => {
+        if (record.providerId === 'yuncontrol-plugins' && contractUrl !== undefined && record.manifestUrl === contractUrl) {
+          migratedAny = true
+          return {
+            ...record,
+            providerId: 'com.yundashi.plugins',
+            ...(record.manifest === undefined ? {} : { manifest: { ...record.manifest, providerId: 'com.yundashi.plugins' } }),
+          }
+        }
+        return record
+      })
+      if (migratedAny) {
+        validateLocalSourceRecords(migrated)
+        await this.state.setSources(migrated)
+        return normalizeActiveSourceRecords(migrated)
+      }
+    }
     validateLocalSourceRecords(records)
     return normalizeActiveSourceRecords(records)
   }

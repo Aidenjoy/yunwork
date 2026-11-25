@@ -1,8 +1,10 @@
 import dns from 'node:dns'
 import { isIP } from 'node:net'
+import http from 'node:http'
 import https from 'node:https'
 import type { IncomingHttpHeaders, IncomingMessage } from 'node:http'
 import type { CatalogHttpClient, CatalogHttpRequestPolicy, CatalogHttpResponse } from '../contracts/types.js'
+import { probeYunworkMarketContract } from '../yunwork-contract.js'
 import {
   createBlockedAddresses,
   createSyntheticProxyAddresses,
@@ -49,6 +51,7 @@ export interface RestrictedHttpClientOptions {
   ) => Promise<RestrictedHttpResponse>
   readonly totalTimeoutMs?: number
   readonly maxBodyBytes?: number
+  readonly allowedInsecureOrigin?: string
 }
 
 const syntheticProxyAddresses = createSyntheticProxyAddresses()
@@ -70,14 +73,21 @@ export function pinnedLookupResult(options: { readonly all?: boolean | undefined
   return options.all ? [pinned] : pinned
 }
 
-function validateUrl(value: string): URL {
+function validateUrl(value: string, allowedInsecureOrigin?: string): URL {
   let url: URL
   try {
     url = new URL(value)
   } catch {
     throw new CatalogNetworkError('invalid-url')
   }
-  if (url.protocol !== 'https:' || url.username || url.password || url.hash || url.port && url.port !== '443') {
+  const allowInsecure = allowedInsecureOrigin !== undefined && url.origin === allowedInsecureOrigin
+  if (
+    url.username
+    || url.password
+    || url.hash
+    || (!allowInsecure && (url.protocol !== 'https:' || (url.port && url.port !== '443')))
+    || (allowInsecure && url.protocol !== 'http:' && url.protocol !== 'https:')
+  ) {
     throw new CatalogNetworkError('invalid-url')
   }
   return url
@@ -113,11 +123,19 @@ async function resolvePinnedAddress(
   hostname: string,
   lookupAddresses: (hostname: string) => Promise<readonly PinnedAddress[]>,
   syntheticProxyHostnames: ReadonlySet<string>,
+  allowPrivateAddress = false,
 ): Promise<PinnedAddress> {
   const literal = hostname.replace(/^\[|\]$/gu, '')
-  if (isIP(literal)) return { address: literal, family: assertSafeAddress(literal) }
+  if (isIP(literal)) {
+    const family = allowPrivateAddress ? (isIP(literal) as 4 | 6) : assertSafeAddress(literal)
+    return { address: literal, family }
+  }
   const addresses = await lookupAddresses(hostname)
   if (addresses.length === 0) throw new CatalogNetworkError('blocked-address')
+  if (allowPrivateAddress) {
+    const first = addresses[0]!
+    return { address: first.address, family: first.family }
+  }
   const allowSyntheticProxyAddress = syntheticProxyHostnames.has(hostname.toLowerCase())
   for (const entry of addresses) {
     if (entry.family !== assertSafeAddress(entry.address, allowSyntheticProxyAddress)) {
@@ -143,14 +161,16 @@ function requestOnce(
       if (firstByteTimer !== undefined) clearTimeout(firstByteTimer)
       callback()
     }
-    const request = https.request(url, {
+    const transport = url.protocol === 'http:' ? http : https
+    const request = transport.request(url, {
       method: 'GET',
       headers: {
         accept: 'application/json',
         'accept-encoding': 'identity',
+        'cache-control': 'no-store',
         'user-agent': 'dsh-community-market/0.1',
       },
-      servername: url.hostname,
+      ...(url.protocol === 'https:' ? { servername: url.hostname } : {}),
       lookup: (_hostname, options, callback) => {
         const result = pinnedLookupResult(options, pinned)
         if (Array.isArray(result)) callback(null, result)
@@ -190,7 +210,8 @@ async function fetchJson(
   redirectCount = 0,
 ): Promise<CatalogHttpResponse> {
   if (signal.aborted) throw new CatalogNetworkError('timeout')
-  const url = validateUrl(start)
+  const insecureOrigin = probeYunworkMarketContract().insecureOrigin
+  const url = validateUrl(start, insecureOrigin)
   if (allowedOrigin !== undefined && url.origin !== allowedOrigin) throw new CatalogNetworkError('redirect')
   if (redirectCount > MAX_REDIRECTS) throw new CatalogNetworkError('redirect')
   const pinned = await resolveAddress(url.hostname)
@@ -233,7 +254,13 @@ export function createRestrictedHttpClient(
   )
   const lookupAddresses = options.lookupAddresses ?? defaultLookupAddresses
   const resolveAddress = options.resolveAddress
-    ?? (async hostname => await resolvePinnedAddress(hostname, lookupAddresses, syntheticProxyHostnames))
+    ?? (async hostname => {
+      const insecureOrigin = 'allowedInsecureOrigin' in options
+        ? options.allowedInsecureOrigin
+        : probeYunworkMarketContract().insecureOrigin
+      const allowPrivate = insecureOrigin !== undefined && new URL(insecureOrigin).hostname === hostname
+      return await resolvePinnedAddress(hostname, lookupAddresses, syntheticProxyHostnames, allowPrivate)
+    })
   const maxBodyBytes = options.maxBodyBytes ?? MAX_BODY_BYTES
   const request = options.request
     ?? (async (url, signal, pinned) => await requestOnce(url, signal, pinned, maxBodyBytes))

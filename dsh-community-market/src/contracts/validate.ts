@@ -1,4 +1,5 @@
 import type { ValidateFunction } from 'ajv'
+import { probeYunworkMarketContract } from '../yunwork-contract.js'
 import { CatalogContractError, schemaIssues, semanticIssue, type CatalogContractName } from './errors.js'
 import type { CatalogProviderPage } from './generated/catalog-provider-page.js'
 import type { CatalogQuery } from './generated/catalog-query.js'
@@ -15,16 +16,48 @@ function parseSchema<T>(contract: CatalogContractName, validate: ValidateFunctio
   return value
 }
 
-export function parseCatalogSource(value: unknown): CatalogSourceManifest {
-  const source = parseSchema('source', validators.source, value)
+function normalizeInsecureSourceForSchema(value: unknown, insecureOrigin?: string): unknown {
+  if (insecureOrigin === undefined || typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return value
+  }
+  const obj = value as Record<string, unknown>
+  const rewrite = (raw: unknown): unknown => {
+    if (typeof raw !== 'string') return raw
+    try {
+      const u = new URL(raw)
+      if (u.protocol === 'http:' && u.origin === insecureOrigin && !u.username && !u.password && !u.hash) {
+        return `https://insecure-origin.local${u.pathname}${u.search}`
+      }
+    } catch {
+      // Keep original so Ajv reports the invalid URL.
+    }
+    return raw
+  }
+  const attr = typeof obj['attribution'] === 'object' && obj['attribution'] !== null && !Array.isArray(obj['attribution'])
+    ? { ...(obj['attribution'] as Record<string, unknown>), url: rewrite((obj['attribution'] as Record<string, unknown>)['url']) }
+    : obj['attribution']
+  const transport = typeof obj['transport'] === 'object' && obj['transport'] !== null && !Array.isArray(obj['transport'])
+    ? { ...(obj['transport'] as Record<string, unknown>), endpoint: rewrite((obj['transport'] as Record<string, unknown>)['endpoint']) }
+    : obj['transport']
+  return { ...obj, attribution: attr, transport }
+}
+
+export function parseCatalogSource(
+  value: unknown,
+  insecureOrigin = probeYunworkMarketContract().insecureOrigin,
+): CatalogSourceManifest {
+  const normalized = normalizeInsecureSourceForSchema(value, insecureOrigin)
+  parseSchema('source', validators.source, normalized)
+  const source = value as CatalogSourceManifest
   const issues = []
   const endpoint = new URL(source.transport.endpoint)
+  const allowInsecure = insecureOrigin !== undefined && endpoint.origin === insecureOrigin
 
   if (
-    endpoint.protocol !== 'https:'
+    (!allowInsecure && (endpoint.protocol !== 'https:' || endpoint.port))
+    || (allowInsecure && endpoint.protocol !== 'http:' && endpoint.protocol !== 'https:')
     || endpoint.username
     || endpoint.password
-    || endpoint.port
     || endpoint.search
     || endpoint.hash
     || !endpoint.pathname.endsWith('/v1/plugins')
@@ -80,8 +113,30 @@ export function parseCatalogProviderPage(value: unknown, effectiveLimit?: number
   return page
 }
 
-export function parseCatalogSnapshot(value: unknown): CatalogSnapshot {
-  const snapshot = parseSchema('snapshot', validators.snapshot, value)
+export function parseCatalogSnapshot(
+  value: unknown,
+  insecureOrigin = probeYunworkMarketContract().insecureOrigin,
+): CatalogSnapshot {
+  let normalized = value
+  if (insecureOrigin !== undefined && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>
+    const src = obj['source']
+    if (typeof src === 'object' && src !== null && !Array.isArray(src)) {
+      const finalUrl = (src as Record<string, unknown>)['finalUrl']
+      if (typeof finalUrl === 'string') {
+        try {
+          const u = new URL(finalUrl)
+          if (u.protocol === 'http:' && u.origin === insecureOrigin && !u.username && !u.password && !u.hash) {
+            normalized = { ...obj, source: { ...(src as Record<string, unknown>), finalUrl: `https://insecure-origin.local${u.pathname}${u.search}` } }
+          }
+        } catch {
+          // Keep original so Ajv reports invalid URL.
+        }
+      }
+    }
+  }
+  parseSchema('snapshot', validators.snapshot, normalized)
+  const snapshot = value as CatalogSnapshot
   const seen = new Set<string>()
 
   for (const [index, item] of snapshot.items.entries()) {
@@ -175,11 +230,13 @@ export function validateLocalSourceRecords(records: readonly LocalSourceRecord[]
           semanticIssue(`/${index}/manifestUrl`, 'must be an absolute URL'),
         ])
       }
+      const insecureOrigin = probeYunworkMarketContract().insecureOrigin
+      const allowInsecure = insecureOrigin !== undefined && manifestUrl.origin === insecureOrigin
       if (
-        manifestUrl.protocol !== 'https:'
+        (!allowInsecure && (manifestUrl.protocol !== 'https:' || manifestUrl.port))
+        || (allowInsecure && manifestUrl.protocol !== 'http:' && manifestUrl.protocol !== 'https:')
         || manifestUrl.username
         || manifestUrl.password
-        || manifestUrl.port
         || manifestUrl.search
         || manifestUrl.hash
       ) {
@@ -187,13 +244,13 @@ export function validateLocalSourceRecords(records: readonly LocalSourceRecord[]
           semanticIssue(`/${index}/manifestUrl`, 'must use credential-free HTTPS on standard port 443 without query or fragment'),
         ])
       }
-      const manifest = parseCatalogSource(record.manifest)
-      if (manifest.providerId !== record.providerId) {
+      const manifest = (record.manifest === undefined || allowInsecure) ? undefined : parseCatalogSource(record.manifest)
+      if (manifest !== undefined && manifest.providerId !== record.providerId) {
         throw new CatalogContractError('local-source', [
           semanticIssue(`/${index}/manifest/providerId`, 'must match the pinned provider claim'),
         ])
       }
-      if (new URL(manifest.transport.endpoint).origin !== manifestUrl.origin) {
+      if (manifest !== undefined && new URL(manifest.transport.endpoint).origin !== manifestUrl.origin) {
         throw new CatalogContractError('local-source', [
           semanticIssue(`/${index}/manifest/transport/endpoint`, 'must match the registered manifest origin'),
         ])

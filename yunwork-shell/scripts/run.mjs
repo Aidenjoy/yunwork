@@ -145,7 +145,7 @@ function seedDesktopProfile (home) {
         bundles: [
           '@deepseek-ai/dsh-base',
           '@deepseek-ai/dsh-web-app',
-          'dshmarket',
+          'dsh-community-market',
           '@agents-anywhere/dsh-bridge-next',
           '@deepseek-ai/dsh-cua-bundle',
           '@deepseek-ai/dsh-experimental-subagent-oar',

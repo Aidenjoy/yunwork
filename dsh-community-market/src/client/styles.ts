@@ -719,7 +719,7 @@ const css = `
   font-size: 12px;
 }
 
-.dshMarketLauncher {
+button.dshMarketLauncher {
   flex: none;
   box-sizing: border-box;
   width: calc(100% + 4px);
@@ -733,7 +733,11 @@ const css = `
   white-space: nowrap;
 }
 
-.dshMarketLauncher[data-wide='false'] {
+button.dshMarketLauncher[data-wide='true'] {
+  justify-content: flex-start;
+}
+
+button.dshMarketLauncher[data-wide='false'] {
   width: 36px;
   height: 36px;
   margin: 8px 0 10px;

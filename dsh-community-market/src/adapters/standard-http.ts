@@ -4,22 +4,39 @@ import type { CatalogSnapshot } from '../contracts/generated/catalog-snapshot.js
 import { normalizeRepositoryIdentity } from '../contracts/identity.js'
 import { normalizeCatalogQuery, serializeCatalogQuery } from '../contracts/query.js'
 import { parseCatalogProviderPage, parseCatalogSnapshot, parseCatalogSource } from '../contracts/validate.js'
+import { probeYunworkMarketContract } from '../yunwork-contract.js'
 
-function safeHttpsUrl(value: string, label: string): URL {
+function safeHttpsUrl(
+  value: string,
+  label: string,
+  insecureOrigin = probeYunworkMarketContract().insecureOrigin,
+): URL {
   let url: URL
   try {
     url = new URL(value)
   } catch {
     throw new Error(`${label} is not a valid URL`)
   }
-  if (url.protocol !== 'https:' || url.username || url.password || url.hash || (url.port && url.port !== '443')) {
+  const allowInsecure = insecureOrigin !== undefined && url.origin === insecureOrigin
+  if (
+    url.username
+    || url.password
+    || url.hash
+    || (!allowInsecure && (url.protocol !== 'https:' || (url.port && url.port !== '443')))
+    || (allowInsecure && url.protocol !== 'http:' && url.protocol !== 'https:')
+  ) {
     throw new Error(`${label} must use credential-free standard HTTPS port 443 without a fragment`)
   }
   return url
 }
 
-function requireOrigin(value: string, expectedOrigin: string, label: string): URL {
-  const url = safeHttpsUrl(value, label)
+function requireOrigin(
+  value: string,
+  expectedOrigin: string,
+  label: string,
+  insecureOrigin = probeYunworkMarketContract().insecureOrigin,
+): URL {
+  const url = safeHttpsUrl(value, label, insecureOrigin)
   if (url.origin !== expectedOrigin) throw new Error(`${label} changed the registered source origin`)
   return url
 }
@@ -104,13 +121,14 @@ export const standardHttpAdapter: CatalogAdapter = {
   adapterId: 'market.standard-http-v1',
   async fetch(queryValue, context) {
     if (context.source.manifestUrl === undefined) throw new Error('standard source has no manifest URL')
-    const registeredOrigin = safeHttpsUrl(context.source.manifestUrl, 'standard source manifest URL').origin
+    const contract = probeYunworkMarketContract()
+    const registeredOrigin = safeHttpsUrl(context.source.manifestUrl, 'standard source manifest URL', contract.insecureOrigin).origin
     const manifestResponse = await context.http.getJson(
       context.source.manifestUrl,
       context.signal,
       { allowedOrigin: registeredOrigin },
     )
-    const manifest = parseCatalogSource(manifestResponse.value)
+    const manifest = parseCatalogSource(manifestResponse.value, contract.insecureOrigin)
     if (manifest.providerId !== context.source.providerId) {
       throw new Error('standard source provider identity changed after registration')
     }
