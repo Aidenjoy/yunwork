@@ -7,6 +7,7 @@ import type { CatalogHttpClient } from '../contracts/types.js'
 import type { MarketBuiltInProvider, MarketSourceMutation } from '../api-types.js'
 import { restrictedHttpClient } from '../network/restricted-http.js'
 import { assertStandardSourceTrustRoot } from '../adapters/standard-http.js'
+import { probeYunworkMarketContract } from '../yunwork-contract.js'
 import { BUILT_IN_PROVIDERS } from '../catalog/service.js'
 import { PersistentCatalogSourceStore } from '../catalog/source-store.js'
 import type { MarketStateStore } from '../catalog/state-store.js'
@@ -21,11 +22,20 @@ export async function readStandardSourceManifest(
   http: CatalogHttpClient = restrictedHttpClient,
 ): Promise<CatalogSourceManifest> {
   const url = new URL(manifestUrl)
-  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.search || url.hash) {
+  const insecureOrigin = probeYunworkMarketContract().insecureOrigin
+  const allowInsecure = insecureOrigin !== undefined && url.origin === insecureOrigin
+  if (
+    (!allowInsecure && (url.protocol !== 'https:' || url.port))
+    || (allowInsecure && url.protocol !== 'http:' && url.protocol !== 'https:')
+    || url.username
+    || url.password
+    || url.search
+    || url.hash
+  ) {
     throw new Error('manifest URL must use credential-free standard HTTPS port 443')
   }
   const response = await http.getJson(url.href, signal, { allowedOrigin: url.origin })
-  const manifest = parseCatalogSource(response.value)
+  const manifest = parseCatalogSource(response.value, insecureOrigin)
   assertStandardSourceTrustRoot(url.href, response.finalUrl, manifest.transport.endpoint)
   return manifest
 }

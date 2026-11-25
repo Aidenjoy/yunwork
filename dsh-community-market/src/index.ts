@@ -22,6 +22,7 @@ interface DesktopActionsCapability {
 const npmRegistryHttp = createRestrictedHttpClient({
   // This is a compiled-in official registry hostname, never provider input.
   syntheticProxyHostnames: ['registry.npmjs.org'],
+  allowedInsecureOrigin: undefined,
 })
 
 export function apply(ctx: Context): void {

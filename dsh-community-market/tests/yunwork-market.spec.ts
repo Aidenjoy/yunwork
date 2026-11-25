@@ -233,3 +233,17 @@ describe('yunwork community market integration', () => {
     const migrated = await store.load()
     expect(migrated[0]?.providerId).toBe('com.yundashi.plugins')
   })
+
+  it('does not re-seed default source after user explicitly deletes all sources', async () => {
+    createTestRuntime({
+      anywhereServerUrl: 'http://192.168.110.152:5174',
+      insecure: true,
+    })
+    const state = new DeferredMarketStateStore(() => {})
+    const store1 = new PersistentCatalogSourceStore(state)
+    expect(await store1.load()).toHaveLength(1)
+
+    await store1.save([])
+    const store2 = new PersistentCatalogSourceStore(state)
+    expect(await store2.load()).toEqual([])
+  })

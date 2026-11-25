@@ -226,8 +226,10 @@ async function main (argv) {
   const printed = [manager.command, ...tokens].map(token => (shell ? quoteForShell(token) : token)).join(' ')
 
   process.stdout.write(`run: env=${runtime.env} command=${options.command}\n`)
-  process.stdout.write(`run: DSH_DESKTOP_NEXT_HOME=${home}\n`)
-  process.stdout.write(`run: YUNWORK_RUNTIME=${runtimePath}\n`)
+  if (!packaging) {
+    process.stdout.write(`run: DSH_DESKTOP_NEXT_HOME=${home}\n`)
+    process.stdout.write(`run: YUNWORK_RUNTIME=${runtimePath}\n`)
+  }
   process.stdout.write(`run: YUNWORK_ENV=${runtime.env}\n`)
   if (packaging) process.stdout.write(`run: YUNWORK_BRAND_CONFIG=${brandConfigPath}\n`)
   process.stdout.write(anchoredCommit === undefined

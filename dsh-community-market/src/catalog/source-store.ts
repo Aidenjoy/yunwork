@@ -67,7 +67,7 @@ export class PersistentCatalogSourceStore implements CatalogSourceStore {
 
   async load(): Promise<readonly LocalSourceRecord[]> {
     const records = [...this.state.getSources()]
-    if (!this.defaultSeeded && records.length === 0) {
+    if (!this.defaultSeeded && records.length === 0 && !(this.state.hasSourcesWritten?.() ?? false)) {
       this.defaultSeeded = true
       const seeded = this.defaultSourceRecord()
       if (seeded !== undefined) {

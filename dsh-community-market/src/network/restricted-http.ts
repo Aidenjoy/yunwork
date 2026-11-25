@@ -51,7 +51,7 @@ export interface RestrictedHttpClientOptions {
   ) => Promise<RestrictedHttpResponse>
   readonly totalTimeoutMs?: number
   readonly maxBodyBytes?: number
-  readonly allowedInsecureOrigin?: string
+  readonly allowedInsecureOrigin?: string | undefined
 }
 
 const syntheticProxyAddresses = createSyntheticProxyAddresses()
@@ -204,17 +204,17 @@ function requestOnce(
 async function fetchJson(
   start: string,
   signal: AbortSignal,
-  resolveAddress: (hostname: string) => Promise<PinnedAddress>,
+  resolveAddress: (hostname: string, urlOrigin?: string) => Promise<PinnedAddress>,
   request: (url: URL, signal: AbortSignal, pinned: PinnedAddress) => Promise<RestrictedHttpResponse>,
   allowedOrigin: string | undefined,
+  insecureOrigin: string | undefined,
   redirectCount = 0,
 ): Promise<CatalogHttpResponse> {
   if (signal.aborted) throw new CatalogNetworkError('timeout')
-  const insecureOrigin = probeYunworkMarketContract().insecureOrigin
   const url = validateUrl(start, insecureOrigin)
   if (allowedOrigin !== undefined && url.origin !== allowedOrigin) throw new CatalogNetworkError('redirect')
   if (redirectCount > MAX_REDIRECTS) throw new CatalogNetworkError('redirect')
-  const pinned = await resolveAddress(url.hostname)
+  const pinned = await resolveAddress(url.hostname, url.origin)
   if (signal.aborted) throw new CatalogNetworkError('timeout')
   const response = await request(url, signal, pinned)
   const status = response.statusCode
@@ -227,6 +227,7 @@ async function fetchJson(
       resolveAddress,
       request,
       allowedOrigin,
+      insecureOrigin,
       redirectCount + 1,
     )
   }
@@ -253,12 +254,12 @@ export function createRestrictedHttpClient(
     (options.syntheticProxyHostnames ?? []).map(hostname => hostname.toLowerCase()),
   )
   const lookupAddresses = options.lookupAddresses ?? defaultLookupAddresses
+  const insecureOrigin = 'allowedInsecureOrigin' in options
+    ? options.allowedInsecureOrigin
+    : probeYunworkMarketContract().insecureOrigin
   const resolveAddress = options.resolveAddress
-    ?? (async hostname => {
-      const insecureOrigin = 'allowedInsecureOrigin' in options
-        ? options.allowedInsecureOrigin
-        : probeYunworkMarketContract().insecureOrigin
-      const allowPrivate = insecureOrigin !== undefined && new URL(insecureOrigin).hostname === hostname
+    ?? (async (hostname: string, urlOrigin?: string) => {
+      const allowPrivate = insecureOrigin !== undefined && urlOrigin === insecureOrigin
       return await resolvePinnedAddress(hostname, lookupAddresses, syntheticProxyHostnames, allowPrivate)
     })
   const maxBodyBytes = options.maxBodyBytes ?? MAX_BODY_BYTES
@@ -286,7 +287,7 @@ export function createRestrictedHttpClient(
           reject(cause)
         }, totalTimeoutMs)
       })
-      const operation = fetchJson(start, totalController.signal, resolveAddress, request, policy.allowedOrigin)
+      const operation = fetchJson(start, totalController.signal, resolveAddress, request, policy.allowedOrigin, insecureOrigin)
       try {
         return await Promise.race([operation, aborted, timedOut])
       } finally {

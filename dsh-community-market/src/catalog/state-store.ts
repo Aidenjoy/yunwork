@@ -28,6 +28,8 @@ export interface MarketCatalogCache {
 export interface MarketStateStore {
   /** Ordered source registry as last written; an unwritten store reads empty. */
   getSources(): readonly LocalSourceRecord[]
+  /** Whether a source registry has ever been written (so an intentionally emptied registry is not re-seeded). */
+  hasSourcesWritten?(): boolean
   /** Replace the whole ordered registry. */
   setSources(records: readonly LocalSourceRecord[]): Promise<void>
   /** Last persisted catalogue cache, or `undefined` when none was written. */
@@ -39,14 +41,20 @@ export interface MarketStateStore {
 /** Session-scoped store. Market's degraded mode when no storage domain is available. */
 export class MemoryMarketStateStore implements MarketStateStore {
   private sources: readonly LocalSourceRecord[] = []
+  private sourcesWritten: boolean
   private catalogCache: MarketCatalogCache | undefined
 
   constructor(seed?: {
     readonly sources?: readonly LocalSourceRecord[]
     readonly catalogCache?: MarketCatalogCache
   }) {
+    this.sourcesWritten = seed?.sources !== undefined
     if (seed?.sources !== undefined) this.sources = seed.sources
     if (seed?.catalogCache !== undefined) this.catalogCache = seed.catalogCache
+  }
+
+  hasSourcesWritten(): boolean {
+    return this.sourcesWritten
   }
 
   getSources(): readonly LocalSourceRecord[] {
@@ -54,6 +62,7 @@ export class MemoryMarketStateStore implements MarketStateStore {
   }
 
   async setSources(records: readonly LocalSourceRecord[]): Promise<void> {
+    this.sourcesWritten = true
     this.sources = records
   }
 
@@ -87,6 +96,10 @@ export class DeferredMarketStateStore implements MarketStateStore {
    * write is abandoned, so degradation is never silent.
    */
   constructor(private readonly warn: (message: string) => void = () => {}) {}
+
+  hasSourcesWritten(): boolean {
+    return this.delegate.hasSourcesWritten?.() ?? false
+  }
 
   getSources(): readonly LocalSourceRecord[] {
     return this.delegate.getSources()
