@@ -9,7 +9,6 @@ import {
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MarketOperationPreviewResponse } from '../../api-types.js'
 import {
-  DSH_DESKTOP_ISSUES_URL,
   type MarketSettingsTabProps,
   registryLabel,
   type UpdateFailure,
@@ -99,7 +98,7 @@ export function OperationConfirmModal({ preview, pending, error, failure, onCanc
             <StateDot state="warning" size={12} />
             <span>
               {t('operationRiskBeforeContact')}
-              <a href={DSH_DESKTOP_ISSUES_URL} target="_blank" rel="noopener noreferrer">{t('contactUs')}</a>
+              <span>{t('contactUs')}</span>
               {t('operationRiskAfterContact')}
             </span>
           </div>

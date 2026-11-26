@@ -625,13 +625,10 @@ describe('MarketSettingsTab', () => {
     expect(screen.getByText(target.version)).toBeTruthy()
     expect(screen.getByText('web')).toBeTruthy()
     expect(screen.getByText(en.operationWarning)).toBeTruthy()
-    const support = screen.getByRole('link', { name: en.contactUs }) as HTMLAnchorElement
+    const support = screen.getByText(en.contactUs)
     expect(support.parentElement?.textContent).toBe(
       `${en.operationRiskBeforeContact}${en.contactUs}${en.operationRiskAfterContact}`,
     )
-    expect(support.href).toBe('https://github.com/anywhere-labs/deepseek-harness-desktop/issues')
-    expect(support.target).toBe('_blank')
-    expect(support.rel).toContain('noopener')
     expect(screen.queryByText(/restart/iu)).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: en.confirmInstall }))
@@ -1203,10 +1200,8 @@ describe('MarketSettingsTab', () => {
     await screen.findByRole('button', { name: /Fixture Plugin/u })
     fireEvent.click(screen.getByRole('button', { name: en.sources }))
 
-    const contact = screen.getByRole('link', { name: en.sourcePartnershipContact }) as HTMLAnchorElement
-    expect(contact.href).toBe('https://github.com/anywhere-labs/deepseek-harness-desktop/issues')
-    expect(contact.target).toBe('_blank')
-    expect(contact.rel).toContain('noopener')
+    const contact = screen.getByText(en.sourcePartnershipContact)
+    expect(contact).toBeTruthy()
     const guide = screen.getByRole('link', { name: en.sourcePartnershipGuide }) as HTMLAnchorElement
     expect(guide.href).toBe(
       'https://github.com/anywhere-labs/deepseek-harness-desktop/blob/master/dsh-community-market/docs/catalog-adapter-guide.md',

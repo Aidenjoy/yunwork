@@ -20,7 +20,7 @@ import type {
   MarketSourceView,
   MarketStateResponse,
 } from '../../api-types.js'
-import { DSH_DESKTOP_ISSUES_URL, type MarketSettingsTabProps } from './model.js'
+import { type MarketSettingsTabProps } from './model.js'
 import { SourceAttribution } from './PluginCard.js'
 
 export function SourcesView({ state, catalog, error, pending, adapterGuideHref, onMutation, onAddStandard, t }: {
@@ -45,7 +45,7 @@ export function SourcesView({ state, catalog, error, pending, adapterGuideHref, 
         <IconGlobeOutlineRegular size={14} />
         <span>
           {t('sourcePartnershipBefore')}
-          <a href={DSH_DESKTOP_ISSUES_URL} target="_blank" rel="noopener noreferrer">{t('sourcePartnershipContact')}</a>
+          <span>{t('sourcePartnershipContact')}</span>
           {t('sourcePartnershipAfter')}{' '}
           <a href={adapterGuideHref} target="_blank" rel="noopener noreferrer">{t('sourcePartnershipGuide')}</a>
         </span>
