@@ -47,6 +47,18 @@ function main (argv) {
   run('node', ['scripts/clean.ts'], bridgeDir)
   run('npx', ['tsdown'], bridgeDir)
   run('node', ['scripts/bundle-connector.ts'], bridgeDir)
+
+  const providerConfigPath = join(bridgeDir, 'lib', 'bundled-connector', 'connector', 'runtimes', 'dsh', 'provider_config.py')
+  const providerConfigRaw = readFileSync(providerConfigPath, 'utf8')
+  const oldCondition = 'if runtime_type == "yunwork" and dsh_home_env and Path(dsh_home_env).is_absolute():'
+  const newCondition = 'if (runtime_type == "yunwork" or os.environ.get("YUNWORK_ANYWHERE_RUNTIME_TYPE", "").strip() == "yunwork") and dsh_home_env and Path(dsh_home_env).is_absolute():'
+  if (!providerConfigRaw.includes(newCondition)) {
+    if (!providerConfigRaw.includes(oldCondition)) {
+      throw new Error(`prepare-yunwork-anywhere: failed to patch bridge_directory in ${providerConfigPath}`)
+    }
+    writeFileSync(providerConfigPath, providerConfigRaw.replace(oldCondition, newCondition), 'utf8')
+  }
+
   run('node', ['scripts/check-build.ts'], bridgeDir)
 
   const packed = execFileSync('npm', ['pack', '--ignore-scripts', '--silent'], { cwd: bridgeDir, encoding: 'utf8', shell: process.platform === 'win32' }).trim().split(/\r?\n/).pop()
