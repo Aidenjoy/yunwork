@@ -41,7 +41,7 @@ const QUOTA = {
   "dsh-desktop-next/src/client/onboarding.tsx": { added: 3, removed: 3 },
   "dsh-desktop-next/src/client/plugin-controls.tsx": { added: 3, removed: 3 },
   "dsh-desktop-next/src/client/settings.tsx": { added: 10, removed: 4 },
-  "dsh-desktop-next/src/client/updates.tsx": { added: 12, removed: 5 },
+  "dsh-desktop-next/src/client/updates.tsx": { added: 13, removed: 5 },
   "dsh-desktop-next/src/data-directory.ts": { added: 15, removed: 5 },
   "dsh-desktop-next/src/desktop-contract.ts": { added: 6, removed: 0 },
   "dsh-desktop-next/src/desktop-menu.ts": { added: 2, removed: 1 },
@@ -51,7 +51,7 @@ const QUOTA = {
   "dsh-desktop-next/src/failure-report.ts": { added: 2, removed: 1 },
   "dsh-desktop-next/src/host-startup-limit.ts": { added: 9, removed: 4 },
   "dsh-desktop-next/src/main-window-state.ts": { added: 1, removed: 1 },
-  "dsh-desktop-next/src/main.ts": { added: 35, removed: 17 },
+  "dsh-desktop-next/src/main.ts": { added: 47, removed: 20 },
   "dsh-desktop-next/src/menu-locale.ts": { added: 3, removed: 2 },
   "dsh-desktop-next/src/native-desktop.ts": { added: 6, removed: 5 },
   "dsh-desktop-next/src/native-ui/index.html": { added: 1, removed: 1 },
@@ -61,9 +61,11 @@ const QUOTA = {
   "dsh-desktop-next/src/program-directory.ts": { added: 7, removed: 6 },
   "dsh-desktop-next/src/runtime-tree.ts": { added: 2, removed: 1 },
   "dsh-desktop-next/src/sandbox-launch.ts": { added: 19, removed: 18 },
-  "dsh-desktop-next/src/update-installer.ts": { added: 8, removed: 6 },
-  "dsh-desktop-next/src/update-state.ts": { added: 4, removed: 0 },
-  "dsh-desktop-next/src/updates.ts": { added: 8, removed: 2 },
+  "dsh-desktop-next/src/update-installer.ts": { added: 10, removed: 7 },
+  "dsh-desktop-next/src/update-state.ts": { added: 6, removed: 0 },
+  "dsh-desktop-next/src/updates.ts": { added: 64, removed: 13 },
+  "dsh-desktop-next/src/yunwork-updates.ts": { added: 249, removed: 0 },
+  "dsh-desktop-next/tests/yunwork-updates.spec.ts": { added: 244, removed: 0 },
   "yarn.lock": { added: 33, removed: 1 },
 }
 
@@ -103,6 +105,12 @@ for (const line of git('diff', '--numstat', `${base}`).split('\n')) {
   const [added, removed, file] = line.split('\t')
   // A binary file (the vendor tarball) reports `-` for both counts; it is registered by name only.
   numstat.set(file, { added: added === '-' ? 0 : Number(added), removed: removed === '-' ? 0 : Number(removed), binary: added === '-' })
+}
+for (const file of git('ls-files', '--others', '--exclude-standard', '--', 'dsh-desktop-next/', 'vendor/yundashi/').split('\n')) {
+  const trimmed = file.trim()
+  if (trimmed === '' || numstat.has(trimmed)) continue
+  const lines = readFileSync(join(REPOSITORY_ROOT, trimmed), 'utf8').split('\n').length - 1
+  numstat.set(trimmed, { added: lines, removed: 0, binary: false })
 }
 
 for (const [file, counts] of numstat) {

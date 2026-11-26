@@ -167,7 +167,7 @@ export function validateProfile (profile) {
       problems.push('updateFeedUrl must be an absolute https URL or null')
     } else {
       validateUrl('updateFeedUrl', profile.updateFeedUrl, problems)
-      if (!profile.updateFeedUrl.startsWith('https://')) problems.push('updateFeedUrl must use https')
+      if (!profile.updateFeedUrl.startsWith('https://') && profile.insecure !== true) problems.push('updateFeedUrl must use https')
     }
   }
 

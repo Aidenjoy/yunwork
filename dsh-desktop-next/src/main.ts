@@ -62,6 +62,7 @@ import { NextUpdateInstaller } from './update-installer.ts'
 import { macUpdateArch } from './update-arch.ts'
 import { UPSTREAM_BRAND } from './brand-defaults.ts'
 import { manualUpdate, manualUpdateHint, releaseNotesUrl, updateLabel } from './update-state.ts'
+import { yunworkReleaseType } from './yunwork-updates.ts'
 import { DESKTOP_SHUTDOWN_TIMEOUT_MS } from '../../dsh-plugin-desktop/src/shutdown.ts'
 import { isDesktopRendererStatus, NextRendererRecovery, type DesktopNavigationCause } from './renderer-recovery.ts'
 import { collectRendererDiagnostics, rendererDiagnosticsFields } from './renderer-diagnostics.ts'
@@ -284,17 +285,21 @@ const permissions = createNativePermissions()
 const updateInstaller = new NextUpdateInstaller({ platform: process.platform, executable: process.execPath,
   language: () => windowsLanguage,
   log: error => runtime.diagnostics.append(String(error), 'warn') })
+const updateArch = process.platform === 'darwin' ? macUpdateArch(process.arch, app.runningUnderARM64Translation)
+  : process.platform === 'win32' && (process.arch === 'arm64' || process.arch === 'x64') ? process.arch : undefined
+const yunworkFeedSupported = Boolean(brand.updateFeedUrl && yunworkReleaseType(process.platform, updateArch) !== undefined)
+const yunworkHttpArtifactRequest = async (url: string, init: RequestInit) => {
+  const response = await net.fetch(url, { ...init, credentials: 'omit' })
+  return { response, finalUrl: response.url || url }
+}
 const updates = new NextUpdates({ version, platform: process.platform, packaged: app.isPackaged, userData: electronData,
   portable: isWindowsPortableCopy(process.platform, app.isPackaged, process.execPath),
-  // A branded build does not update itself: the version check has one fixed endpoint, so a brand that names its own feed
-  // cannot be served by it — polling the upstream service on the brand's behalf is worse than not polling at all. An
-  // unbranded build behaves exactly as before.
-  disabled: contractPath !== undefined,
+  disabled: contractPath !== undefined && !yunworkFeedSupported,
+  feedUrl: brand.updateFeedUrl ?? undefined,
   downloads: updateDownloadDirectory(process.platform),
-  arch: process.platform === 'darwin' ? macUpdateArch(process.arch, app.runningUnderARM64Translation)
-    : process.platform === 'win32' && (process.arch === 'arm64' || process.arch === 'x64') ? process.arch : undefined,
+  arch: updateArch,
   request: (url, init) => net.fetch(url, { ...init, credentials: 'omit' }),
-  artifactRequest: createArtifactRequest(),
+  artifactRequest: brand.updateFeedUrl?.startsWith('http://') ? yunworkHttpArtifactRequest : createArtifactRequest(),
   changed: () => { if (app.isReady() && !quitting) native.refresh() },
   available: nextVersion => {
     if (app.isReady() && !quitting) {
@@ -782,7 +787,11 @@ function confirmLanAccess(): Promise<boolean> {
 }
 /** Linux packages and portable Windows copies are not installed in the app: open the release page, which carries every package format. */
 function openUpdateDownload(version: string | undefined): void {
-  if (brand.productName !== UPSTREAM_BRAND.productName) return
+  if (brand.productName !== UPSTREAM_BRAND.productName) {
+    const downloadUrl = updates.snapshot().downloadUrl
+    if (downloadUrl) void shell.openExternal(downloadUrl).catch(error => runtime.diagnostics.append(String(error), 'warn'))
+    return
+  }
   void shell.openExternal(releaseNotesUrl(version)).catch(error => runtime.diagnostics.append(String(error), 'warn'))
 }
 async function promptAvailableUpdate(): Promise<void> {

@@ -6,6 +6,8 @@ export interface NextUpdateState {
   /** This build was given no feed of its own, so there is nothing to check or install. */
   disabled?: boolean
   version?: string
+  notes?: string
+  downloadUrl?: string
   received?: number
   total?: number
   error?: 'service' | 'download' | 'prepare' | 'install' | 'development' | 'unsupported'

@@ -8,6 +8,7 @@ import { atomicJson, privateDirectory, readPrivateFile } from './private-files.t
 import { withUpdateArch, type UpdateArch } from './update-arch.ts'
 import { updateDownloadFailure } from './update-failure.ts'
 import type { NextUpdateState } from './update-state.ts'
+import { checkYunworkUpdate, downloadYunworkUpdate, yunworkUpdateFilename } from './yunwork-updates.ts'
 
 export interface NextUpdateOptions {
   version: string
@@ -17,6 +18,8 @@ export interface NextUpdateOptions {
   portable?: boolean
   /** The brand names no feed of its own, so this build neither checks nor installs updates. */
   disabled?: boolean
+  /** Custom Yunwork release feed URL (e.g. https://agent.yundashi.com/api/v2/releases/latest). */
+  feedUrl?: string
   userData: string
   /** Directory for downloaded installers; defaults to the update state directory in userData. */
   downloads?: string
@@ -35,7 +38,7 @@ export interface NextUpdateOptions {
 
 export class NextUpdates {
   private state: NextUpdateState
-  private result?: UpdateCheckResult
+  private result?: UpdateCheckResult & { downloadUrl?: string; notes?: string; sha256?: string }
   private operation?: Promise<void>
   private controller?: AbortController
   private timer?: ReturnType<typeof setTimeout>
@@ -115,7 +118,26 @@ export class NextUpdates {
     return (this.options.platform !== 'darwin' && this.options.platform !== 'win32') || this.options.arch === undefined
       ? init : withUpdateArch(init, this.options.arch)
   }
-  private async query(signal: AbortSignal): Promise<UpdateCheckResult | null> {
+  private async query(signal: AbortSignal): Promise<(UpdateCheckResult & { downloadUrl?: string; notes?: string; sha256?: string }) | null> {
+    if (this.options.feedUrl) {
+      const arch = this.options.arch ?? (process.arch === 'arm64' ? 'arm64' : 'x64')
+      const res = await checkYunworkUpdate({
+        feedUrl: this.options.feedUrl,
+        currentVersion: this.options.version,
+        platform: this.options.platform,
+        arch,
+        request: (url, init) => this.options.request(url, this.withArch(init)),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(20_000)]),
+      })
+      return {
+        status: res.status,
+        currentVersion: res.currentVersion,
+        latestVersion: res.latestVersion,
+        ...(res.downloadUrl ? { downloadUrl: res.downloadUrl } : {}),
+        ...(res.notes ? { notes: res.notes } : {}),
+        ...(res.sha256 ? { sha256: res.sha256 } : {}),
+      }
+    }
     let installationId
     // The privacy policy names packaged macOS and Windows builds, portable copies included, as the ones that send the
     // installation UUID, so Linux checks without it.
@@ -131,8 +153,13 @@ export class NextUpdates {
       this.set({ phase: 'checking' })
       try {
         this.result = await this.query(signal) ?? undefined
-        if (!this.result) { this.set({ phase: 'error', error: 'service', version: undefined }); return }
-        this.set({ phase: this.result.status === 'update-available' ? 'available' : 'current', version: this.result.latestVersion })
+        if (!this.result) { this.set({ phase: 'error', error: 'service', version: undefined, notes: undefined, downloadUrl: undefined }); return }
+        this.set({
+          phase: this.result.status === 'update-available' ? 'available' : 'current',
+          version: this.result.latestVersion,
+          notes: this.result.status === 'update-available' ? this.result.notes : undefined,
+          downloadUrl: this.result.status === 'update-available' ? this.result.downloadUrl : undefined,
+        })
         if (this.result.status === 'update-available') {
           if (background && this.result.latestVersion !== this.notifiedVersion) {
             this.recordNotifiedVersion(this.result.latestVersion)
@@ -167,13 +194,31 @@ export class NextUpdates {
         const directory = this.directory = await mkdtemp(join(downloads, 'download-'))
         this.set({ phase: 'downloading', version: result.latestVersion, received: 0, total: undefined })
         let lastProgress = 0
-        const path = await downloadDesktopUpdate({ platform, version: result.latestVersion, channel: 'next',
-          destinationPath: join(directory, desktopUpdateFilename(platform, result.latestVersion, 'next', arch)),
-          request: (url, init) => this.options.artifactRequest(url, this.withArch(init)), expectedSha256: result.installerSha256?.[platform],
-          signal: AbortSignal.any([signal, AbortSignal.timeout(60 * 60_000)]), onProgress: (received, total) => {
-            if (Date.now() - lastProgress < 250 && received !== total) return
-            lastProgress = Date.now(); this.set({ received, total })
-          } })
+        const onProgress = (received: number, total: number | undefined): void => {
+          if (Date.now() - lastProgress < 250 && received !== total) return
+          lastProgress = Date.now(); this.set({ received, total })
+        }
+        const path = this.options.feedUrl && result.downloadUrl
+          ? await downloadYunworkUpdate({
+              downloadUrl: result.downloadUrl,
+              platform,
+              destinationPath: join(directory, yunworkUpdateFilename(platform, result.latestVersion, arch)),
+              request: (url, init) => this.options.artifactRequest(url, this.withArch(init)),
+              expectedSha256: result.sha256,
+              allowHttp: this.options.feedUrl.startsWith('http://'),
+              signal: AbortSignal.any([signal, AbortSignal.timeout(60 * 60_000)]),
+              onProgress,
+            })
+          : await downloadDesktopUpdate({
+              platform,
+              version: result.latestVersion,
+              channel: 'next',
+              destinationPath: join(directory, desktopUpdateFilename(platform, result.latestVersion, 'next', arch)),
+              request: (url, init) => this.options.artifactRequest(url, this.withArch(init)),
+              expectedSha256: result.installerSha256?.[platform],
+              signal: AbortSignal.any([signal, AbortSignal.timeout(60 * 60_000)]),
+              onProgress,
+            })
         signal.throwIfAborted()
         preparing = true; this.set({ phase: 'preparing' })
         await this.options.prepare(path, result.latestVersion, directory, signal)

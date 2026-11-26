@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { brand } from './brand.ts'
+import { sameYunworkVersion } from './yunwork-updates.ts'
 
 const execute = promisify(execFile)
 /** The bundle identity an update must carry: the same one the build is signed with. */
@@ -74,13 +75,13 @@ export const MAC_UPDATE_SCRIPT = [
 /** Check both bundle identity and embedded SemVer before validating the signature. */
 export function assertNextMacBundle(identifier: string, manifest: unknown, version: string): void {
   if (identifier.trim() !== NEXT_APP_ID || !manifest || typeof manifest !== 'object'
-    || (manifest as { name?: unknown }).name !== 'dsh-desktop-next' || (manifest as { version?: unknown }).version !== version) {
+    || (manifest as { name?: unknown }).name !== 'dsh-desktop-next' || !sameYunworkVersion(String((manifest as { version?: unknown }).version ?? ''), version)) {
     throw new Error('The downloaded application does not match this Next release')
   }
 }
 
 export function assertNextWindowsInstaller(info: { ProductName?: unknown; ProductVersion?: unknown }, version: string): void {
-  if (info.ProductName !== brand.productName || info.ProductVersion !== version) throw new Error('The installer does not match this Next release')
+  if (info.ProductName !== brand.productName || !sameYunworkVersion(String(info.ProductVersion ?? ''), version)) throw new Error('The installer does not match this Next release')
 }
 
 export class NextUpdateInstaller {

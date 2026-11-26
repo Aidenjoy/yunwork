@@ -11,11 +11,12 @@ export function NextUpdateSettings({ state, language, run }: { state: DesktopSta
   const manual = manualUpdate(update, state.platform)
   const action = updateAction(update)
   const branded = Boolean(state.brand && state.brand.productName !== UPSTREAM_BRAND.productName)
-  const hideManualDownload = branded && manual && action === 'download-update'
+  const hideManualDownload = branded && manual && action === 'download-update' && !update.downloadUrl
   return <section className="dshDesktopSettingsGroup" data-next-updates>
     <h3>{t('应用更新', 'App updates')}</h3>
     <p className="dshDesktopSettingsHint">{state.brand?.productName ?? UPSTREAM_BRAND.productName} · {state.version}</p>
     <p role={update.phase === 'error' ? 'alert' : 'status'}>{updateLabel(update, language)}</p>
+    {update.notes && (update.phase === 'available' || update.phase === 'ready') && <p className="dshDesktopSettingsHint">{update.notes}</p>}
     {update.phase === 'ready' && <p className="dshDesktopSettingsHint">{t('安装时会重启应用并中断正在运行的任务，Profile 和会话会保留。', 'Installation restarts the app and interrupts running tasks. Profiles and sessions are retained.')}</p>}
     {update.phase === 'downloading' && <progress style={{ width: '100%' }} aria-label={t('更新下载进度', 'Update download progress')} max={update.total ?? 1} value={update.total ? update.received ?? 0 : undefined} />}
     {manual

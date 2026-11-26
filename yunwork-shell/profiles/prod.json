@@ -2,7 +2,7 @@
   "apiBaseUrl": "https://token.yundashi.com",
   "authBaseUrl": "https://token.yundashi.com",
   "insecure": false,
-  "updateFeedUrl": null,
+  "updateFeedUrl": "https://agent.yundashi.com/api/v2/releases/latest",
   "anywhereServerUrl": "https://agent.yundashi.com",
   "anywhereWebUrl": "https://agent.yundashi.com"
 }
