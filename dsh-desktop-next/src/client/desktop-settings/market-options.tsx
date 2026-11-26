@@ -34,9 +34,6 @@ const DSH_MARKET_URL = 'https://github.com/dsh-market/dsh-market'
 const AWESOME_DSH_PLUGIN_URL = 'https://github.com/awesome-dsh-plugin/awesome-dsh-plugin'
 
 export function marketTitle(option: (typeof MARKET_OPTIONS)[number], t: Translate): ReactNode {
-  if (option.id === 'community-market') {
-    return <RepositoryLink href={COMMUNITY_MARKET_URL}>{t(option.title)}</RepositoryLink>
-  }
   if (option.id === 'dsh-market') {
     return <RepositoryLink href={DSH_MARKET_URL}>{t(option.title)}</RepositoryLink>
   }

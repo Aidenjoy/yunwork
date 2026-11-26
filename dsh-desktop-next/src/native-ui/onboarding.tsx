@@ -15,9 +15,12 @@ import { OFFICIAL_PLUGIN_INDEX } from '../upstream-family-labels.ts'
 import './onboarding.css'
 import whaleArtwork from '../../build/app-icon.icon/Assets/whale-cobalt.svg'
 import classicWhaleArtwork from '../../build/classic/app-icon.icon/Assets/DeepSeek.svg'
+import yunworkLogoArtwork from '../../../yunwork-shell/assets/icon.svg'
 // Reuse the portable device family artwork and composition from the AA landing page.
 import phoneArtwork from './assets/agents-anywhere-phone.webp'
 import tabletArtwork from './assets/agents-anywhere-tablet.webp'
+import yunworkPhoneArtwork from '../../../yunwork-shell/assets/remote-phone.jpg'
+import yunworkTabletArtwork from '../../../yunwork-shell/assets/remote-tablet.png'
 type Market = 'community' | 'dsh'
 // Keep official dialog dependencies out of recovery and the earlier setup pages.
 const DesktopPermissionsButton = lazy(() => import('../client/permissions.tsx').then(module => ({ default: module.DesktopPermissionsButton })))
@@ -47,13 +50,19 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
   const mounted = useRef(true)
   const animation = useRef<Animation | undefined>(undefined)
   const disabled = busy || transitioning
-  const steps = [t('欢迎', 'Welcome'), t('插件市场', 'Plugin market'), t('远程控制', 'Remote control'), t('Computer Use（Next）', 'Computer Use (Next)'), t('浏览器访问', 'Browser access'), t('恢复模式', 'Recovery')]
+  const brandName = state.brand?.productName ?? UPSTREAM_BRAND.productName
+  const branded = Boolean(state.brand && state.brand.productName !== UPSTREAM_BRAND.productName)
+  const steps = [t('欢迎', 'Welcome'), t('插件市场', 'Plugin market'), t('远程控制', 'Remote control'), branded ? 'Computer Use' : t('Computer Use（Next）', 'Computer Use (Next)'), t('浏览器访问', 'Browser access'), t('恢复模式', 'Recovery')]
   const lastPage = steps.length - 1
-  const titles = [t(`欢迎使用\n${state.brand?.productName ?? UPSTREAM_BRAND.productName}`, `Welcome to\n${state.brand?.productName ?? UPSTREAM_BRAND.productName}`), t('用插件，\n拓展更多可能。', 'Make room\nfor more possibilities.'), t('离开电脑，\n也能继续。', 'Keep going.\nAway from your desk.'), t('让 AI 帮你\n操作电脑。', 'Let AI work\non your desktop.'), t('在浏览器中，\n也能打开。', 'Open in a browser,\nwhen you need to.'), t('遇到问题，\n从这里恢复。', 'A way back,\nwhen you need it.')]
+  const titles = [t(`欢迎使用\n${brandName}`, `Welcome to\n${brandName}`), t('用插件，\n拓展更多可能。', 'Make room\nfor more possibilities.'), t('离开电脑，\n也能继续。', 'Keep going.\nAway from your desk.'), t('让 AI 帮你\n操作电脑。', 'Let AI work\non your desktop.'), t('在浏览器中，\n也能打开。', 'Open in a browser,\nwhen you need to.'), t('遇到问题，\n从这里恢复。', 'A way back,\nwhen you need it.')]
   const descriptions = [
     t(`为 Profile「${state.selected}」选好常用功能。\n几步设置，就可以开始。`, `Set up the essentials for Profile “${state.selected}”.\nA few choices, then you’re ready to go.`),
-    t(`选择一个插件市场，浏览和安装社区插件；\n或配置${OFFICIAL_PLUGIN_INDEX.title.zh}。\n也可以暂不开启，以后在插件页面调整。`, `Choose a market to browse and install community plugins,\nor configure "${OFFICIAL_PLUGIN_INDEX.title.en}".\nYou can also leave it off and decide later in Plugins.`),
-    t('通过 Agents Anywhere，在手机、平板或其他电脑上，\n继续与你的 Agent 对话。', 'Use Agents Anywhere on your phone, tablet or another computer\nto keep the conversation going.'),
+    branded
+      ? t('选择一个插件市场，浏览和安装插件。\n也可以暂不开启，以后在插件页面调整。', 'Choose a plugin market to browse and install plugins.\nYou can also leave it off and decide later in Plugins.')
+      : t(`选择一个插件市场，浏览和安装社区插件；\n或配置${OFFICIAL_PLUGIN_INDEX.title.zh}。\n也可以暂不开启，以后在插件页面调整。`, `Choose a market to browse and install community plugins,\nor configure "${OFFICIAL_PLUGIN_INDEX.title.en}".\nYou can also leave it off and decide later in Plugins.`),
+    branded
+      ? t('通过云大师远程控制，在手机、平板或其他电脑上，\n继续与你的 Agent 对话。', 'Use Yundashi Remote Control on your phone, tablet or another computer\nto keep the conversation going.')
+      : t('通过 Agents Anywhere，在手机、平板或其他电脑上，\n继续与你的 Agent 对话。', 'Use Agents Anywhere on your phone, tablet or another computer\nto keep the conversation going.'),
     t('查看屏幕内容，操作鼠标和键盘。\n理解截图需要支持图片输入的模型。', 'View the screen and control the mouse and keyboard.\nUnderstanding screenshots requires a model with image input.'),
     t('允许在浏览器中打开当前 Profile，\n并选择可访问的设备范围。', 'Allow browser access to the current Profile,\nand choose which devices can reach it.'),
     t('恢复助手可以在 Profile 无法启动时打开。\n先检查问题，再选择合适的恢复方式。', 'The recovery assistant works even when a Profile cannot start.\nCheck what happened, then choose how to recover.'),
@@ -113,10 +122,14 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
     }
   }
 
-  const builtinMarkets = [
-    { value: 'community', title: 'dsh-community-market', badge: 'Beta', detail: t('DSH Desktop 内置的开放插件市场，支持添加和选择自定义插件数据源。', 'DSH Desktop’s open plugin market, with support for custom plugin sources.') },
-    { value: 'dsh', title: 'dsh-market', detail: t('社区热门的插件市场，数据来自 awesome-dsh-plugin。', 'A popular community market, powered by awesome-dsh-plugin.') },
-  ] as const
+  const builtinMarkets = branded
+    ? [
+      { value: 'community', title: t('云大师插件市场', 'Yundashi Plugin Market'), badge: 'Beta', detail: t('内置的开放插件市场，支持添加和选择自定义插件数据源。', 'Built-in open plugin market, with support for custom plugin sources.') },
+    ] as const
+    : [
+      { value: 'community', title: 'dsh-community-market', badge: 'Beta', detail: t('DSH Desktop 内置的开放插件市场，支持添加和选择自定义插件数据源。', 'DSH Desktop’s open plugin market, with support for custom plugin sources.') },
+      { value: 'dsh', title: 'dsh-market', detail: t('社区热门的插件市场，数据来自 awesome-dsh-plugin。', 'A popular community market, powered by awesome-dsh-plugin.') },
+    ] as const
   const exposures = [
     { value: 'loopback', title: t('仅这台电脑', 'This computer only'), detail: t('只有这台电脑上的浏览器可以访问。', 'Only browsers on this computer can connect.') },
     { value: 'lan', title: t('局域网', 'Local network'), badge: 'Beta', detail: t('同一局域网中的其他设备可通过访问链接连接。请先在访问设备上安装并信任本机提供的证书。', 'Other devices on the same local network can connect using the access link. First install and trust the certificate provided by this computer on each device.') },
@@ -133,7 +146,7 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
           {page > 0 && <p className="next-onboarding-eyebrow">{steps[page]}</p>}
           <h1 id="onboarding-title" tabIndex={-1}>{titles[page]!.split('\n').map((line, i) => <span className="next-onboarding-reveal" key={i} style={{ animationDelay: `${80 + i * 130}ms` }}>{line}</span>)}</h1>
           <p className="next-onboarding-description next-onboarding-reveal">{descriptions[page]}</p>
-          {page === 0 && <div className="next-onboarding-option next-onboarding-reveal">
+          {page === 0 && !branded && <div className="next-onboarding-option next-onboarding-reveal">
             <div className="next-onboarding-toggle"><span id="onboarding-app-icon">{t('应用图标', 'App icon')}</span></div>
             <RadioGroup aria-labelledby="onboarding-app-icon" className="next-onboarding-icon-choices" value={appIcon} disabled={disabled} onValueChange={value => { chooseAppIcon(String(value)) }}>
               {DESKTOP_APP_ICONS.map(icon => <label className="next-onboarding-choice next-onboarding-icon-choice" data-selected={appIcon === icon} key={icon}>
@@ -154,7 +167,7 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
           </div>}
           {page === 3 && <div className="next-onboarding-option next-onboarding-reveal">
             <div className="next-onboarding-toggle">
-              <label htmlFor="onboarding-computer-use">{t('启用 Computer Use（Next）', 'Enable Computer Use (Next)')}</label>
+              <label htmlFor="onboarding-computer-use">{branded ? t('启用 Computer Use', 'Enable Computer Use') : t('启用 Computer Use（Next）', 'Enable Computer Use (Next)')}</label>
               <div className="next-onboarding-option-actions">
                 <Suspense fallback={<span className="next-onboarding-permissions-loading" aria-hidden="true"><LoaderCircle className="animate-spin" /></span>}>
                   <DesktopPermissionsButton service={bridge.permissions} language={locale} label={t('权限设置', 'Permission settings')} disabled={disabled} />
@@ -171,7 +184,9 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
         </section>
         <aside className="next-onboarding-panel next-onboarding-reveal" aria-label={steps[page]}>
           {page === 0 && <div className="next-onboarding-wordmark" aria-hidden="true">
-            <span key={appIcon} className="next-onboarding-whale" style={{ maskImage: `url("${appIcon === 'classic' ? classicWhaleArtwork : whaleArtwork}")` }} /><span>NEXT</span>
+            {branded
+              ? <><img src={yunworkLogoArtwork} width={64} height={64} alt="" draggable={false} /><span>{brandName}</span></>
+              : <><span key={appIcon} className="next-onboarding-whale" style={{ maskImage: `url("${appIcon === 'classic' ? classicWhaleArtwork : whaleArtwork}")` }} /><span>NEXT</span></>}
           </div>}
           {page === 1 && <div className="grid w-full gap-3" aria-label={t('插件市场', 'Plugin market')}>
             <RadioGroup aria-label={t('内置插件市场', 'Built-in plugin markets')} className="next-onboarding-choice-group" value={market} disabled={disabled || !marketEnabled} onValueChange={value => { if (marketEnabled) setMarket(value as Market) }}>
@@ -180,16 +195,16 @@ export function Onboarding({ state, locale, bridge }: { state: Pick<DesktopState
                 <RadioGroupItem value={option.value} aria-labelledby={`market-${option.value}`} />
               </label>)}
             </RadioGroup>
-            <RadioGroup aria-label={t(OFFICIAL_PLUGIN_INDEX.title.zh, OFFICIAL_PLUGIN_INDEX.title.en)} value={officialMarket ? 'official' : ''} disabled={disabled}>
+            {!branded && <RadioGroup aria-label={t(OFFICIAL_PLUGIN_INDEX.title.zh, OFFICIAL_PLUGIN_INDEX.title.en)} value={officialMarket ? 'official' : ''} disabled={disabled}>
               <label className="next-onboarding-choice" data-selected={officialMarket} onClick={event => { event.preventDefault(); if (!disabled) setOfficialMarket(current => !current) }}>
                 <span className="next-onboarding-choice-copy"><strong><span id="market-official">{t(OFFICIAL_PLUGIN_INDEX.title.zh, OFFICIAL_PLUGIN_INDEX.title.en)}</span><small>{t('实验性', 'Experimental')}</small></strong><span>{t('开启这个官方插件，并预置 dsh-market 索引源。', 'Enable this official plugin with the dsh-market index source preconfigured.')}</span></span>
                 <RadioGroupItem value="official" aria-labelledby="market-official" />
               </label>
-            </RadioGroup>
+            </RadioGroup>}
           </div>}
           {page === 2 && <figure className="next-onboarding-devices" aria-hidden="true">
-            <img className="next-onboarding-tablet" src={tabletArtwork} width="1500" height="1067" alt="" draggable={false} />
-            <img className="next-onboarding-phone" src={phoneArtwork} width="720" height="1487" alt="" draggable={false} />
+            <img className="next-onboarding-tablet" src={branded ? yunworkTabletArtwork : tabletArtwork} width="1500" height="1067" alt="" draggable={false} />
+            <img className="next-onboarding-phone" src={branded ? yunworkPhoneArtwork : phoneArtwork} width="720" height="1487" alt="" draggable={false} />
           </figure>}
           {page === 3 && <figure className="next-onboarding-computer" data-enabled={computerUse} aria-hidden="true">
             <div className="next-onboarding-screen">

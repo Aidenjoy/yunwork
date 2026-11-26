@@ -3,6 +3,6 @@
   "authBaseUrl": "https://token.yundashi.com",
   "insecure": false,
   "updateFeedUrl": null,
-  "anywhereServerUrl": null,
-  "anywhereWebUrl": null
+  "anywhereServerUrl": "https://agent.yundashi.com",
+  "anywhereWebUrl": "https://agent.yundashi.com"
 }

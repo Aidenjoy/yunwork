@@ -106,11 +106,11 @@ function DesktopOnboarding({ bridge, zh, renderSurface, renderLoading, renderNex
   return surface(<section className="dshDesktopAccountSetup" aria-labelledby="desktop-account-title" aria-busy={busy}>
     <div>
       <h1 id="desktop-account-title">{zh ? '桌面设置已完成' : 'Desktop setup is complete'}</h1>
-      <p>{zh ? `登录 DeepSeek，开始使用 Profile「${snapshot.profile}」。` : `Sign in to DeepSeek to get started with Profile “${snapshot.profile}”.`}</p>
-      <p>{zh ? '登录后，如当前 Profile 尚未完成官方引导，将继续进行设置。你也可以在登录窗口中选择使用 API Key，或稍后登录。' : 'After sign-in, any unfinished official setup for this Profile will continue. You can also choose an API key in the sign-in dialog, or sign in later.'}</p>
+      <p>{zh ? `登录云大师，开始使用 Profile「${snapshot.profile}」。` : `Sign in to Yundashi to get started with Profile “${snapshot.profile}”.`}</p>
+      <p>{zh ? '登录后，如当前 Profile 尚未完成引导，将继续进行设置。你也可以在登录窗口中选择使用 API Key，或稍后登录。' : 'After sign-in, any unfinished setup for this Profile will continue. You can also choose an API key in the sign-in dialog, or sign in later.'}</p>
       {accountStatus === 'error' && <p role="alert">{zh ? '暂时无法读取登录状态，可以稍后在账号菜单中登录。' : 'Account status is unavailable. You can sign in later from the account menu.'}</p>}
       <div className="dshDesktopAccountActions">
-        <Button variant="primary" disabled={busy || accountStatus !== 'signed-out'} onClick={() => { void dismiss(true) }}>{zh ? '登录 DeepSeek' : 'Sign in to DeepSeek'}</Button>
+        <Button variant="primary" disabled={busy || accountStatus !== 'signed-out'} onClick={() => { void dismiss(true) }}>{zh ? '登录云大师' : 'Sign in to Yundashi'}</Button>
         <Button variant="outline" disabled={busy} onClick={() => { void dismiss(false) }}>{zh ? '暂时跳过' : 'Not now'}</Button>
       </div>
     </div>

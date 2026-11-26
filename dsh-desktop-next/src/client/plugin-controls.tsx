@@ -510,8 +510,8 @@ function MarketSourcesDialog({ open, onClose, context, bundles, preferredMarket,
 
 
 const remoteDescription = (t: Translate): string => t(
-  '通过 Agents Anywhere 从手机或其他设备连接。启用后，在侧边栏的“远程控制”中完成配对。',
-  'Connect from your phone or another device with Agents Anywhere. After enabling, pair it from Remote Control in the sidebar.',
+  '通过云大师远程控制从手机或其他设备连接。启用后，在侧边栏的“云大师远程控制”中完成配对。',
+  'Connect from your phone or another device with Yundashi Remote Control. After enabling, pair it from Yundashi Remote Control in the sidebar.',
 )
 
 const computerDescription = (t: Translate): string => t(

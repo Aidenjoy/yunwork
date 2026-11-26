@@ -28,7 +28,11 @@ const QUOTA = {
   "dsh-desktop-next/cordis.patch.yml": { added: 23, removed: 0 },
   "dsh-desktop-next/package.json": { added: 3, removed: 1 },
   "dsh-desktop-next/scripts/package.ts": { added: 43, removed: 2 },
+  "dsh-desktop-next/scripts/packaged-payload.ts": { added: 1, removed: 1 },
   "dsh-desktop-next/scripts/prepare-payload.ts": { added: 14, removed: 1 },
+  "dsh-desktop-next/scripts/verify-fuses.ts": { added: 5, removed: 4 },
+  "dsh-desktop-next/scripts/verify-packaged.ts": { added: 4, removed: 3 },
+  "dsh-desktop-next/scripts/verify-win-installer.ts": { added: 11, removed: 6 },
   "dsh-desktop-next/src/app-downloads.ts": { added: 2, removed: 1 },
   "dsh-desktop-next/src/brand-defaults.ts": { added: 39, removed: 0 },
   "dsh-desktop-next/src/brand.ts": { added: 86, removed: 0 },
@@ -65,15 +69,11 @@ const BINARY_ALLOWANCE = new Set([
 /** Paths this layer owns: everything else in the diff belongs to the third layer or to upstream. */
 const isLayer2 = file => file.startsWith('dsh-desktop-next/') || file === 'yarn.lock' || (file.startsWith('vendor/yundashi/') && file.endsWith('.tgz'))
 
-/** The only files a brand literal may survive in, and why; every other occurrence has to be gone. */const LITERAL_ALLOWANCE = {
+const LITERAL_ALLOWANCE = {
   // The single source of the upstream identity; every fallback in this layer reads it.
   'dsh-desktop-next/src/brand-defaults.ts': 1,
-  // A static document no script rewrites; the window title is pinned by `page-title-updated` instead.
   // The comment that explains the upstream application-data name; no code uses the literal.
   'dsh-desktop-next/src/data-directory.ts': 1,
-  'dsh-desktop-next/src/native-ui/index.html': 1,
-  // Fallbacks inside an AppleScript block, reached only when the two environment variables are missing.
-  'dsh-desktop-next/src/update-installer.ts': 2,
 }
 
 /** Bundles that run without Node: `require('node:fs')` in one of them fails the whole renderer. */

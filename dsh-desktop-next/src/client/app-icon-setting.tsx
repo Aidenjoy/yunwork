@@ -1,5 +1,6 @@
 /** The app icon row of Desktop settings; setup offers the same choice on its first page. */
 import { useId, useRef, useState } from 'react'
+import { UPSTREAM_BRAND } from '../brand-defaults.ts'
 import { appIconDescription, appIconLabel, DESKTOP_APP_ICONS, type DesktopAppIcon } from '../app-icon.ts'
 import type { DesktopCommand, DesktopState } from '../desktop-contract.ts'
 import { AppIconPreview } from './app-icon-previews.tsx'
@@ -9,8 +10,9 @@ import { AppIconPreview } from './app-icon-previews.tsx'
  * shows at once; Safe Mode keeps the default.
  */
 export function NextAppIconSetting({ state, language, run }: {
-  state: Pick<DesktopState, 'preferences' | 'platform' | 'safeMode'>; language: string; run(command: DesktopCommand): Promise<unknown>
+  state: Pick<DesktopState, 'preferences' | 'platform' | 'safeMode'> & Partial<Pick<DesktopState, 'brand'>>; language: string; run(command: DesktopCommand): Promise<unknown>
 }) {
+  if (state.brand && state.brand.productName !== UPSTREAM_BRAND.productName) return null
   const zh = language.startsWith('zh')
   const labelId = useId()
   const choices = useRef<Partial<Record<DesktopAppIcon, HTMLButtonElement | null>>>({})

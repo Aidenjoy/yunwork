@@ -211,7 +211,7 @@ async function main (argv) {
   const brandConfigPath = join(dirname(runtimePath), 'electron-builder-brand.json')
   if (packaging) {
     writeFileSync(brandConfigPath, `${JSON.stringify({
-      productName: runtime.productName, appId: runtime.appId, artifactPrefix: runtime.artifactPrefix,
+      productName: runtime.productName, appId: runtime.appId, artifactPrefix: runtime.artifactPrefix, maintainer: 'Yundashi <support@yundashi.com>',
     }, null, 2)}\n`)
     environment.YUNWORK_BRAND_CONFIG = brandConfigPath
   }

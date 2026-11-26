@@ -84,7 +84,7 @@ export function windowsWelcome(): string {
     `$dshDesktopPath = @($env:${PATH} -split ';' | Where-Object { -not [string]::Equals($_, $dshDesktopShimDir, [StringComparison]::OrdinalIgnoreCase) })`,
     `$env:${PATH} = (@($dshDesktopShimDir) + $dshDesktopPath) -join ';'`,
     `Set-Location -LiteralPath $env:${WINDOWS_PROFILE_DIRECTORY}`,
-    `Write-Host ("DSH Desktop {0} terminal" -f $env:${WINDOWS_PRODUCT_VERSION})`,
+    `Write-Host ("云大师 Agent {0} terminal" -f $env:${WINDOWS_PRODUCT_VERSION})`,
     `Write-Host $env:${WINDOWS_TERMINAL_MODE}`,
     `Write-Host ("Profile: {0}" -f $env:${DEFAULT_PROFILE})`,
     `Write-Host ("Profile directory: {0}" -f $env:${WINDOWS_PROFILE_DIRECTORY})`,
@@ -95,7 +95,7 @@ export function windowsWelcome(): string {
     `Write-Host '  ${pluginAdd}'`,
     `Write-Host '  ${pluginRemove}'`,
     `Write-Host '  ${pluginUpdate}'`,
-    `Write-Host 'Restart DSH Desktop after plugin changes.'`,
+    `Write-Host 'Restart 云大师 Agent after plugin changes.'`,
     '',
   ].join('\r\n')
 }
@@ -111,7 +111,7 @@ export function windowsCmdWelcome(): string {
     'setlocal EnableDelayedExpansion',
     `set "${RUN_AS_NODE}="`,
     `cd /d "!${WINDOWS_PROFILE_DIRECTORY}!"`,
-    `echo(DSH Desktop !${WINDOWS_PRODUCT_VERSION}! terminal`,
+    `echo(云大师 Agent !${WINDOWS_PRODUCT_VERSION}! terminal`,
     `echo(!${WINDOWS_TERMINAL_MODE}!`,
     `echo(Profile: !${DEFAULT_PROFILE}!`,
     `echo(Profile directory: !${WINDOWS_PROFILE_DIRECTORY}!`,
@@ -122,7 +122,7 @@ export function windowsCmdWelcome(): string {
     `echo(  ${escapeBatchText(pluginAdd)}`,
     `echo(  ${escapeBatchText(pluginRemove)}`,
     `echo(  ${escapeBatchText(pluginUpdate)}`,
-    `echo(${escapeBatchText('Restart DSH Desktop after plugin changes.')}`,
+    `echo(${escapeBatchText('Restart 云大师 Agent after plugin changes.')}`,
     'endlocal & set "ELECTRON_RUN_AS_NODE="',
     '',
   ].join('\r\n')

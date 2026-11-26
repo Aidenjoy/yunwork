@@ -122,7 +122,9 @@ export async function exportIcons ({ out = DEFAULT_OUT, contract = DEFAULT_CONTR
       write('build/app-icon-dark.png', await png(windowsSource, 1024))
       write('build/app-icon-preview-dark.png', await png(windowsSource, 128))
     }
-    write(`build/${base}app-icon.ico`, icoContainer(await Promise.all(ICO_SIZES.map(async size => ({ size, png: await png(windowsSource, size) })))))
+    const ico = icoContainer(await Promise.all(ICO_SIZES.map(async size => ({ size, png: await png(windowsSource, size) }))))
+    write(`build/${base}app-icon.ico`, ico)
+    if (base === '') write('build/app-icon-dark.ico', ico)
     write(`build/${base}app-icon.icns`, icnsContainer(await Promise.all(ICNS_CHUNKS.map(async ([type, size]) => [type, await png(macSource, size)]))))
     // The bundle keeps its structure and its file names: the onboarding artwork imports them by path, and Icon Composer
     // resolves each layer by the name `icon.json` gives it.

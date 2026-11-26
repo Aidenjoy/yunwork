@@ -63,12 +63,16 @@ let brandReported = false
 
 function brandFlags(): string[] {
   if (BRAND_CONFIG === undefined) return []
-  const brand = JSON.parse(readFileSync(BRAND_CONFIG, 'utf8')) as { productName?: string; appId?: string; artifactPrefix?: string }
+  const brand = JSON.parse(readFileSync(BRAND_CONFIG, 'utf8')) as { productName?: string; appId?: string; artifactPrefix?: string; maintainer?: string }
   const flags: string[] = []
   if (brand.appId !== undefined) flags.push(`--config.appId=${brand.appId}`)
   if (brand.productName !== undefined) {
-    flags.push(`--config.productName=${brand.productName}`, `--config.nsis.shortcutName=${brand.productName}`)
+    flags.push(`--config.productName=${brand.productName}`, `--config.nsis.shortcutName=${brand.productName}`,
+      `--config.mac.extendInfo.NSMicrophoneUsageDescription=${brand.productName} uses the microphone when you enable a feature that records audio.`,
+      `--config.mac.extendInfo.NSAudioCaptureUsageDescription=${brand.productName} captures screen audio when you request it.`,
+      `--config.mac.extendInfo.NSLocalNetworkUsageDescription=${brand.productName} connects to devices on your local network when you enable network access.`)
   }
+  if (brand.maintainer !== undefined) flags.push(`--config.linux.maintainer=${brand.maintainer}`)
   if (brand.artifactPrefix !== undefined) {
     flags.push(`--config.mac.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
       `--config.win.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
