@@ -79,16 +79,46 @@ export class PersistentCatalogSourceStore implements CatalogSourceStore {
       this.defaultSeeded = true
       const contractUrl = probeYunworkMarketContract().manifestUrl
       let migratedAny = false
+const DEFAULT_YUNWORK_SOURCE_RECORD_ID = '00000000-0000-4000-8000-000000000001'
+
+function rewriteEndpointOrigin(endpoint: string, targetOrigin: string): string {
+  try {
+    const parsed = new URL(endpoint)
+    return `${targetOrigin}${parsed.pathname}${parsed.search}`
+  } catch {
+    return endpoint
+  }
+}
+
       const migrated = records.map(record => {
-        if (record.providerId === 'yuncontrol-plugins' && contractUrl !== undefined && record.manifestUrl === contractUrl) {
-          migratedAny = true
-          return {
-            ...record,
-            providerId: 'com.yundashi.plugins',
-            ...(record.manifest === undefined ? {} : { manifest: { ...record.manifest, providerId: 'com.yundashi.plugins' } }),
-          }
+        if (record.sourceRecordId !== DEFAULT_YUNWORK_SOURCE_RECORD_ID || contractUrl === undefined) return record
+        const targetOrigin = new URL(contractUrl).origin
+        const nextManifest = record.manifest === undefined
+          ? undefined
+          : {
+              ...record.manifest,
+              providerId: 'com.yundashi.plugins',
+              attribution: { ...record.manifest.attribution, url: targetOrigin },
+              transport: {
+                ...record.manifest.transport,
+                endpoint: rewriteEndpointOrigin(record.manifest.transport.endpoint, targetOrigin),
+              },
+            }
+        const manifestChanged = record.manifest !== undefined && nextManifest !== undefined && (
+          record.manifest.providerId !== nextManifest.providerId
+          || record.manifest.attribution.url !== nextManifest.attribution.url
+          || record.manifest.transport.endpoint !== nextManifest.transport.endpoint
+        )
+        const urlChanged = record.manifestUrl !== contractUrl
+        const idChanged = record.providerId !== 'com.yundashi.plugins'
+        if (!urlChanged && !idChanged && !manifestChanged) return record
+        migratedAny = true
+        return {
+          ...record,
+          providerId: 'com.yundashi.plugins',
+          manifestUrl: contractUrl,
+          ...(nextManifest === undefined ? {} : { manifest: nextManifest }),
         }
-        return record
       })
       if (migratedAny) {
         validateLocalSourceRecords(migrated)

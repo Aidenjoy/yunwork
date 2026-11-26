@@ -247,3 +247,96 @@ describe('yunwork community market integration', () => {
     const store2 = new PersistentCatalogSourceStore(state)
     expect(await store2.load()).toEqual([])
   })
+
+  it('migrates LAN yuncontrol-plugins to prod https URL and com.yundashi.plugins when switching to prod', async () => {
+    createTestRuntime({
+      anywhereServerUrl: 'https://token.yundashi.com',
+      insecure: false,
+    })
+    const state = new DeferredMarketStateStore(() => {})
+    await state.setSources([{
+      sourceRecordId: '00000000-0000-4000-8000-000000000001',
+      providerId: 'yuncontrol-plugins',
+      adapterId: 'market.standard-http-v1',
+      registrationKind: 'user-added',
+      manifestUrl: 'http://192.168.110.152:5174/api/v2/plugins/config',
+      manifest: {
+        manifestVersion: '1.0.0',
+        providerId: 'yuncontrol-plugins',
+        name: '云大师插件市场',
+        attribution: { name: '云大师', url: 'http://192.168.110.152:5174' },
+        transport: { kind: 'https-json', method: 'GET', endpoint: 'http://192.168.110.152:5174/api/v2/plugins/v1/plugins' },
+        query: { supported: ['q', 'category', 'cursor', 'limit'], sorts: [], defaultLimit: 20, maxLimit: 50 },
+      } as never,
+      enabled: true,
+      order: 0,
+    }])
+    const store = new PersistentCatalogSourceStore(state)
+    const migrated = await store.load()
+    expect(migrated[0]?.providerId).toBe('com.yundashi.plugins')
+    expect(migrated[0]?.manifestUrl).toBe('https://token.yundashi.com/api/v2/plugins/config')
+    expect(migrated[0]?.manifest?.providerId).toBe('com.yundashi.plugins')
+    expect(migrated[0]?.manifest?.attribution.url).toBe('https://token.yundashi.com')
+    expect(migrated[0]?.manifest?.transport.endpoint).toBe('https://token.yundashi.com/api/v2/plugins/v1/plugins')
+  })
+
+  it('syncs LAN com.yundashi.plugins manifestUrl to prod https URL when switching to prod', async () => {
+    createTestRuntime({
+      anywhereServerUrl: 'https://token.yundashi.com',
+      insecure: false,
+    })
+    const state = new DeferredMarketStateStore(() => {})
+    await state.setSources([{
+      sourceRecordId: '00000000-0000-4000-8000-000000000001',
+      providerId: 'com.yundashi.plugins',
+      adapterId: 'market.standard-http-v1',
+      registrationKind: 'user-added',
+      manifestUrl: 'http://192.168.110.152:5174/api/v2/plugins/config',
+      manifest: {
+        manifestVersion: '1.0.0',
+        providerId: 'yuncontrol-plugins',
+        name: '云大师插件市场',
+        attribution: { name: '云大师', url: 'http://192.168.110.152:5174' },
+        transport: { kind: 'https-json', method: 'GET', endpoint: 'http://192.168.110.152:5174/api/v2/plugins/v1/plugins' },
+        query: { supported: ['q', 'category', 'cursor', 'limit'], sorts: [], defaultLimit: 20, maxLimit: 50 },
+      } as never,
+      enabled: true,
+      order: 0,
+    }])
+    const store = new PersistentCatalogSourceStore(state)
+    const migrated = await store.load()
+    expect(migrated[0]?.providerId).toBe('com.yundashi.plugins')
+    expect(migrated[0]?.manifestUrl).toBe('https://token.yundashi.com/api/v2/plugins/config')
+    expect(migrated[0]?.manifest?.providerId).toBe('com.yundashi.plugins')
+    expect(migrated[0]?.manifest?.attribution.url).toBe('https://token.yundashi.com')
+    expect(migrated[0]?.manifest?.transport.endpoint).toBe('https://token.yundashi.com/api/v2/plugins/v1/plugins')
+  })
+
+  it('leaves custom third-party sources untouched when switching environments', async () => {
+    createTestRuntime({
+      anywhereServerUrl: 'https://token.yundashi.com',
+      insecure: false,
+    })
+    const state = new DeferredMarketStateStore(() => {})
+    await state.setSources([{
+      sourceRecordId: '00000000-0000-4000-8000-000000000099',
+      providerId: 'com.example.custom',
+      adapterId: 'market.standard-http-v1',
+      registrationKind: 'user-added',
+      manifestUrl: 'https://custom.example.com/plugins/config',
+      manifest: {
+        manifestVersion: '1.0.0',
+        providerId: 'com.example.custom',
+        name: 'Custom Market',
+        attribution: { name: 'Custom', url: 'https://custom.example.com' },
+        transport: { kind: 'https-json', method: 'GET', endpoint: 'https://custom.example.com/plugins/v1/plugins' },
+        query: { supported: ['q', 'category', 'cursor', 'limit'], sorts: [], defaultLimit: 20, maxLimit: 50 },
+      } as never,
+      enabled: true,
+      order: 0,
+    }])
+    const store = new PersistentCatalogSourceStore(state)
+    const loaded = await store.load()
+    expect(loaded[0]?.providerId).toBe('com.example.custom')
+    expect(loaded[0]?.manifestUrl).toBe('https://custom.example.com/plugins/config')
+  })
