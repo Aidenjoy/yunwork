@@ -209,9 +209,19 @@ async function main (argv) {
     environment.YUNWORK_RUNTIME = runtimePath
   }
   const brandConfigPath = join(dirname(runtimePath), 'electron-builder-brand.json')
+  const macUnsigned = packaging && process.platform === 'darwin'
+    && !environment.CSC_LINK && !environment.CSC_NAME
   if (packaging) {
+    if (macUnsigned) {
+      environment.CSC_IDENTITY_AUTO_DISCOVERY = 'false'
+      process.stdout.write('run: macOS 未检测到 Apple 签名凭据（CSC_LINK/CSC_NAME），当前将构建未签名测试包（hardenedRuntime=false）\n')
+    }
     writeFileSync(brandConfigPath, `${JSON.stringify({
-      productName: runtime.productName, appId: runtime.appId, artifactPrefix: runtime.artifactPrefix, maintainer: 'Yundashi <support@yundashi.com>',
+      productName: runtime.productName,
+      appId: runtime.appId,
+      artifactPrefix: runtime.artifactPrefix,
+      maintainer: 'Yundashi <support@yundashi.com>',
+      ...(macUnsigned ? { hardenedRuntime: false } : {}),
     }, null, 2)}\n`)
     environment.YUNWORK_BRAND_CONFIG = brandConfigPath
   }
@@ -249,16 +259,19 @@ async function main (argv) {
   // Both artefacts of a packaged build live in the base only while it runs: the icons replace tracked artwork, and the
   // contract is a file the payload copies. `finally` puts the tree back even when the base command fails.
   const buildDirectory = dirname(runtimePath)
-  let applied = false
-  if (packaging) {
-    const icons = await exportIcons({ contract: runtimePath })
-    applyOverlay({ overlayDir: icons.out, desktopRoot: DESKTOP_ROOT, backupDir: join(buildDirectory, 'icons-backup') })
-    writeFileSync(join(DESKTOP_ROOT, PAYLOAD_CONTRACT), readFileSync(runtimePath))
-    applied = true
-    process.stdout.write(`run: applied ${icons.written.length} brand icons and the runtime contract\n`)
-  }
+  let overlayApplied = false
+  let contractWritten = false
 
   try {
+    if (packaging) {
+      const icons = await exportIcons({ contract: runtimePath })
+      applyOverlay({ overlayDir: icons.out, desktopRoot: DESKTOP_ROOT, backupDir: join(buildDirectory, 'icons-backup') })
+      overlayApplied = true
+      writeFileSync(join(DESKTOP_ROOT, PAYLOAD_CONTRACT), readFileSync(runtimePath))
+      contractWritten = true
+      process.stdout.write(`run: applied ${icons.written.length} brand icons and the runtime contract\n`)
+    }
+
     // With `shell: true` Node joins the argument array with spaces and cmd.exe reparses the result, silently splitting
     // an argument that contains spaces. Build one quoted command line instead, with the same tokens the dry run prints.
     // `quoteForShell` has already refused every cmd metacharacter, so this join cannot turn an argument into a command.
@@ -282,10 +295,17 @@ async function main (argv) {
       })
     })
   } finally {
-    if (applied) {
-      const restored = restoreOverlay({ desktopRoot: DESKTOP_ROOT, backupDir: join(buildDirectory, 'icons-backup') })
-      rmSync(join(DESKTOP_ROOT, PAYLOAD_CONTRACT), { force: true })
-      process.stdout.write(`run: restored ${restored} files and removed the runtime contract\n`)
+    if (overlayApplied || contractWritten) {
+      const actions = []
+      if (overlayApplied) {
+        const restored = restoreOverlay({ desktopRoot: DESKTOP_ROOT, backupDir: join(buildDirectory, 'icons-backup') })
+        actions.push(`restored ${restored} files`)
+      }
+      if (contractWritten) {
+        rmSync(join(DESKTOP_ROOT, PAYLOAD_CONTRACT), { force: true })
+        actions.push('removed the runtime contract')
+      }
+      process.stdout.write(`run: ${actions.join(' and ')}\n`)
     }
   }
 }

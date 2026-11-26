@@ -13,13 +13,15 @@ const { version: sourceVersion } = JSON.parse(readFileSync(join(root, 'package.j
 // artifact after that override, so the verifier must follow it too.
 const version = process.env.DSH_NEXT_BUILD_VERSION ?? sourceVersion
 const runtimeContractPath = join(root, 'yunwork-runtime.json')
-const productName = existsSync(runtimeContractPath)
-  ? ((JSON.parse(readFileSync(runtimeContractPath, 'utf8')) as { productName?: string }).productName ?? 'DSH NEXT')
-  : 'DSH NEXT'
+const runtimeContract = existsSync(runtimeContractPath)
+  ? (JSON.parse(readFileSync(runtimeContractPath, 'utf8')) as { productName?: string; artifactPrefix?: string })
+  : {}
+const productName = runtimeContract.productName ?? 'DSH NEXT'
+const artifactPrefix = runtimeContract.artifactPrefix ?? 'DSH-NEXT'
 const executableName = `${productName}.exe`
 const verifyMode = process.env.DSH_PACKAGE_VERIFY_MODE ?? 'win'
 if (verifyMode === 'win-portable') {
-  const archivePath = join(root, 'dist', `DSH-NEXT-${version}-${process.arch}-Portable.zip`)
+  const archivePath = join(root, 'dist', `${artifactPrefix}-${version}-${process.arch}-Portable.zip`)
   const fd = openSync(archivePath, 'r')
   const header = Buffer.alloc(4)
   try {
@@ -37,11 +39,11 @@ if (verifyMode === 'win-portable') {
   // Linux packages the host CPU; electron-builder spells x64 as x86_64 and amd64 and keeps arm64 as is.
   const arm64 = process.arch === 'arm64'
   const targets = linuxPackageTargets(process.env)
-  if (targets.includes('AppImage')) assertAppImage(join(root, 'dist', `DSH-NEXT-${version}-${arm64 ? 'arm64' : 'x86_64'}.AppImage`), 'Next AppImage')
-  if (targets.includes('deb')) assertDebArchive(join(root, 'dist', `DSH-NEXT-${version}-${arm64 ? 'arm64' : 'amd64'}.deb`), 'Next Debian package')
+  if (targets.includes('AppImage')) assertAppImage(join(root, 'dist', `${artifactPrefix}-${version}-${arm64 ? 'arm64' : 'x86_64'}.AppImage`), 'Next AppImage')
+  if (targets.includes('deb')) assertDebArchive(join(root, 'dist', `${artifactPrefix.toLowerCase()}-${version}-${arm64 ? 'arm64' : 'amd64'}.deb`), 'Next Debian package')
   assertElfExecutable(join(root, 'dist', arm64 ? 'linux-arm64-unpacked' : 'linux-unpacked', 'dsh-desktop-next'), 'Next Linux application')
 } else {
-  assertPortableExecutable(join(root, 'dist', `DSH-NEXT-${version}-${process.arch}-Setup.exe`), 'Next NSIS installer')
+  assertPortableExecutable(join(root, 'dist', `${artifactPrefix}-${version}-${process.arch}-Setup.exe`), 'Next NSIS installer')
   assertPortableExecutable(join(root, 'dist', windowsUnpackedDirectory(), executableName), 'Next application')
   assertWindowsArchitecture(join(root, 'dist', windowsUnpackedDirectory(), executableName), process.arch === 'arm64' ? 'arm64' : 'x64')
 }

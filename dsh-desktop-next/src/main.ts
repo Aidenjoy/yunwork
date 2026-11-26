@@ -60,6 +60,7 @@ import { isWindowsPortableCopy } from './update-portable.ts'
 import { createArtifactRequest } from './update-transport.ts'
 import { NextUpdateInstaller } from './update-installer.ts'
 import { macUpdateArch } from './update-arch.ts'
+import { UPSTREAM_BRAND } from './brand-defaults.ts'
 import { manualUpdate, manualUpdateHint, releaseNotesUrl, updateLabel } from './update-state.ts'
 import { DESKTOP_SHUTDOWN_TIMEOUT_MS } from '../../dsh-plugin-desktop/src/shutdown.ts'
 import { isDesktopRendererStatus, NextRendererRecovery, type DesktopNavigationCause } from './renderer-recovery.ts'
@@ -781,6 +782,7 @@ function confirmLanAccess(): Promise<boolean> {
 }
 /** Linux packages and portable Windows copies are not installed in the app: open the release page, which carries every package format. */
 function openUpdateDownload(version: string | undefined): void {
+  if (brand.productName !== UPSTREAM_BRAND.productName) return
   void shell.openExternal(releaseNotesUrl(version)).catch(error => runtime.diagnostics.append(String(error), 'warn'))
 }
 async function promptAvailableUpdate(): Promise<void> {

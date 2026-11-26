@@ -63,7 +63,7 @@ let brandReported = false
 
 function brandFlags(): string[] {
   if (BRAND_CONFIG === undefined) return []
-  const brand = JSON.parse(readFileSync(BRAND_CONFIG, 'utf8')) as { productName?: string; appId?: string; artifactPrefix?: string; maintainer?: string }
+  const brand = JSON.parse(readFileSync(BRAND_CONFIG, 'utf8')) as { productName?: string; appId?: string; artifactPrefix?: string; maintainer?: string; hardenedRuntime?: boolean }
   const flags: string[] = []
   if (brand.appId !== undefined) flags.push(`--config.appId=${brand.appId}`)
   if (brand.productName !== undefined) {
@@ -73,9 +73,11 @@ function brandFlags(): string[] {
       `--config.mac.extendInfo.NSLocalNetworkUsageDescription=${brand.productName} connects to devices on your local network when you enable network access.`)
   }
   if (brand.maintainer !== undefined) flags.push(`--config.linux.maintainer=${brand.maintainer}`)
+  if (brand.hardenedRuntime === false) flags.push('--config.mac.hardenedRuntime=false')
   if (brand.artifactPrefix !== undefined) {
     flags.push(`--config.mac.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
       `--config.win.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
+      `--config.nsis.artifactName=${brand.artifactPrefix}-\${version}-\${arch}-Setup.\${ext}`,
       `--config.linux.artifactName=${brand.artifactPrefix}${VERSIONED_ARTIFACT}`,
       // Debian package names are lowercase by policy, independent of how the product is written.
       `--config.deb.packageName=${brand.artifactPrefix.toLowerCase()}`)

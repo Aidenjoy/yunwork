@@ -10,6 +10,8 @@ export function NextUpdateSettings({ state, language, run }: { state: DesktopSta
   // Linux and portable Windows copies have no in-app installer; their download action opens the release page instead.
   const manual = manualUpdate(update, state.platform)
   const action = updateAction(update)
+  const branded = Boolean(state.brand && state.brand.productName !== UPSTREAM_BRAND.productName)
+  const hideManualDownload = branded && manual && action === 'download-update'
   return <section className="dshDesktopSettingsGroup" data-next-updates>
     <h3>{t('应用更新', 'App updates')}</h3>
     <p className="dshDesktopSettingsHint">{state.brand?.productName ?? UPSTREAM_BRAND.productName} · {state.version}</p>
@@ -20,10 +22,14 @@ export function NextUpdateSettings({ state, language, run }: { state: DesktopSta
       ? <p className="dshDesktopSettingsHint">{manualUpdateHint(language, update.portable)}</p>
       : !update.installable && <p className="dshDesktopSettingsHint">{t('应用内安装更新需要使用 macOS 或 Windows 安装版。', 'Install a packaged macOS or Windows build to use in-app updates.')}</p>}
     <div className="dshDesktopSettingsDialogActions">
-      <a className="dshDesktopSettingsButton" href={releaseNotesUrl(update.version ?? state.version)} target="_blank" rel="noopener noreferrer">{t('更新公告', 'Release notes')}</a>
-      <Button variant="outline" size="sm" className="dshDesktopSettingsButton" disabled={state.busy || !action || action !== 'check-updates' && !update.installable && !manual} onClick={() => { if (action) run({ type: action }) }}>
-        {action === 'install-update' ? t('安装并重启', 'Install and restart') : action === 'download-update' ? manual ? t('前往下载', 'Open download page') : t('下载更新', 'Download update') : t('检查更新', 'Check for updates')}
-      </Button>
+      {!branded && (
+        <a className="dshDesktopSettingsButton" href={releaseNotesUrl(update.version ?? state.version)} target="_blank" rel="noopener noreferrer">{t('更新公告', 'Release notes')}</a>
+      )}
+      {!hideManualDownload && (
+        <Button variant="outline" size="sm" className="dshDesktopSettingsButton" disabled={state.busy || !action || action !== 'check-updates' && !update.installable && !manual} onClick={() => { if (action) run({ type: action }) }}>
+          {action === 'install-update' ? t('安装并重启', 'Install and restart') : action === 'download-update' ? manual ? t('前往下载', 'Open download page') : t('下载更新', 'Download update') : t('检查更新', 'Check for updates')}
+        </Button>
+      )}
     </div>
   </section>
 }

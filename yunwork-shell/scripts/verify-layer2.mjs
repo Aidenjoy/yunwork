@@ -27,34 +27,41 @@ const DEFAULT_BASE = 'master'
 const QUOTA = {
   "dsh-desktop-next/cordis.patch.yml": { added: 23, removed: 0 },
   "dsh-desktop-next/package.json": { added: 3, removed: 1 },
-  "dsh-desktop-next/scripts/package.ts": { added: 43, removed: 2 },
+  "dsh-desktop-next/scripts/package.ts": { added: 49, removed: 2 },
   "dsh-desktop-next/scripts/packaged-payload.ts": { added: 1, removed: 1 },
   "dsh-desktop-next/scripts/prepare-payload.ts": { added: 14, removed: 1 },
   "dsh-desktop-next/scripts/verify-fuses.ts": { added: 5, removed: 4 },
   "dsh-desktop-next/scripts/verify-packaged.ts": { added: 4, removed: 3 },
-  "dsh-desktop-next/scripts/verify-win-installer.ts": { added: 11, removed: 6 },
+  "dsh-desktop-next/scripts/verify-win-installer.ts": { added: 17, removed: 10 },
   "dsh-desktop-next/src/app-downloads.ts": { added: 2, removed: 1 },
   "dsh-desktop-next/src/brand-defaults.ts": { added: 39, removed: 0 },
   "dsh-desktop-next/src/brand.ts": { added: 86, removed: 0 },
+  "dsh-desktop-next/src/client/app-icon-setting.tsx": { added: 3, removed: 1 },
+  "dsh-desktop-next/src/client/desktop-settings/market-options.tsx": { added: 0, removed: 3 },
+  "dsh-desktop-next/src/client/onboarding.tsx": { added: 3, removed: 3 },
+  "dsh-desktop-next/src/client/plugin-controls.tsx": { added: 3, removed: 3 },
   "dsh-desktop-next/src/client/settings.tsx": { added: 10, removed: 4 },
-  "dsh-desktop-next/src/client/updates.tsx": { added: 2, removed: 1 },
+  "dsh-desktop-next/src/client/updates.tsx": { added: 12, removed: 5 },
   "dsh-desktop-next/src/data-directory.ts": { added: 15, removed: 5 },
   "dsh-desktop-next/src/desktop-contract.ts": { added: 6, removed: 0 },
   "dsh-desktop-next/src/desktop-menu.ts": { added: 2, removed: 1 },
+  "dsh-desktop-next/src/desktop-terminal/mac-scripts.ts": { added: 2, removed: 2 },
+  "dsh-desktop-next/src/desktop-terminal/windows-scripts.ts": { added: 4, removed: 4 },
   "dsh-desktop-next/src/desktop-terminal/windows-shell.ts": { added: 6, removed: 1 },
   "dsh-desktop-next/src/failure-report.ts": { added: 2, removed: 1 },
   "dsh-desktop-next/src/host-startup-limit.ts": { added: 9, removed: 4 },
   "dsh-desktop-next/src/main-window-state.ts": { added: 1, removed: 1 },
-  "dsh-desktop-next/src/main.ts": { added: 33, removed: 17 },
+  "dsh-desktop-next/src/main.ts": { added: 35, removed: 17 },
   "dsh-desktop-next/src/menu-locale.ts": { added: 3, removed: 2 },
   "dsh-desktop-next/src/native-desktop.ts": { added: 6, removed: 5 },
-  "dsh-desktop-next/src/native-ui/main.tsx": { added: 2, removed: 1 },
-  "dsh-desktop-next/src/native-ui/onboarding.tsx": { added: 3, removed: 2 },
+  "dsh-desktop-next/src/native-ui/index.html": { added: 1, removed: 1 },
+  "dsh-desktop-next/src/native-ui/main.tsx": { added: 5, removed: 2 },
+  "dsh-desktop-next/src/native-ui/onboarding.tsx": { added: 32, removed: 16 },
   "dsh-desktop-next/src/notifications.ts": { added: 3, removed: 2 },
   "dsh-desktop-next/src/program-directory.ts": { added: 7, removed: 6 },
   "dsh-desktop-next/src/runtime-tree.ts": { added: 2, removed: 1 },
   "dsh-desktop-next/src/sandbox-launch.ts": { added: 19, removed: 18 },
-  "dsh-desktop-next/src/update-installer.ts": { added: 6, removed: 4 },
+  "dsh-desktop-next/src/update-installer.ts": { added: 8, removed: 6 },
   "dsh-desktop-next/src/update-state.ts": { added: 4, removed: 0 },
   "dsh-desktop-next/src/updates.ts": { added: 8, removed: 2 },
   "yarn.lock": { added: 33, removed: 1 },
@@ -91,7 +98,7 @@ const base = baseIndex === -1 ? DEFAULT_BASE : process.argv[baseIndex + 1]
 
 /** One pass over the whole diff: every file this layer touched, with its real line counts. */
 const numstat = new Map()
-for (const line of git('diff', '--numstat', `${base}`, 'HEAD').split('\n')) {
+for (const line of git('diff', '--numstat', `${base}`).split('\n')) {
   if (line.trim() === '') continue
   const [added, removed, file] = line.split('\t')
   // A binary file (the vendor tarball) reports `-` for both counts; it is registered by name only.

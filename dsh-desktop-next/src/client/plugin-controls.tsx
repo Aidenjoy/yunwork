@@ -569,7 +569,7 @@ function RemoteControlSettings({ context, t, row, loading, onChanged }: {
     finally { setBusy(false); onChanged() }
   }
   const openPanel = (): void => {
-    const trigger = document.querySelector<HTMLButtonElement>('[data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="远程控制"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Remote Control"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Mobile connection"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="手机连接"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Agents Anywhere"]')
+    const trigger = document.querySelector<HTMLButtonElement>('[data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="云大师远程控制"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Yundashi Remote Control"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="远程控制"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Remote Control"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Mobile connection"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="手机连接"], [data-slot="sidebar.footer.action"] button[aria-haspopup="dialog"][aria-label="Agents Anywhere"]')
     if (trigger) { setError(''); trigger.click() }
     else setError(t('远程控制界面尚未就绪，请稍后重试。', 'Remote control is not ready yet. Try again shortly.'))
   }

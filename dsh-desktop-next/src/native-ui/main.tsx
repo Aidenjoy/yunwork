@@ -13,6 +13,7 @@ import { NextSettingsAdapter } from '../client/settings-adapter.ts'
 import type { DesktopCommand } from '../desktop-contract.ts'
 import { hostExitDetail } from '../exit-code.ts'
 import { recoverySupport } from '../recovery-support.ts'
+import { UPSTREAM_BRAND } from '../brand-defaults.ts'
 import './theme.css'
 import { Onboarding } from './onboarding.tsx'
 import { STARTUP_LIMIT_ACTION, StartupLimitCard } from './startup-limit.tsx'
@@ -133,7 +134,8 @@ function NativePages({ adapter }: { adapter: NextSettingsAdapter }) {
     terminalAvailable: state.platform === 'darwin' || state.platform === 'win32', safeModeAvailable: !state.safeMode, safeModeActive: state.safeMode,
     quickActions, notice: notice ?? (busy ? undefined : state.recovery?.notice),
   }
-  return <RecoveryApp state={recovery} copy={copy} support={recoverySupport(locale)}
+  const branded = Boolean(state.brand && state.brand.productName !== UPSTREAM_BRAND.productName)
+  return <RecoveryApp state={recovery} copy={copy} support={branded ? undefined : recoverySupport(locale)}
     quickCards={<>
       {state.portConflict && <PortConflictCard locale={locale} conflict={state.portConflict} safeMode={state.safeMode} restart={copy.restart} />}
       <StartupLimitCard locale={locale} value={state.hostStartupTimeout} safeMode={state.safeMode}
