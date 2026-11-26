@@ -25,7 +25,7 @@ const DEFAULT_BASE = 'master'
 
 /** Every file this layer may touch, with the exact `git diff --numstat` it is registered for. */
 const QUOTA = {
-  "dsh-desktop-next/cordis.patch.yml": { added: 23, removed: 0 },
+  "dsh-desktop-next/cordis.patch.yml": { added: 25, removed: 0 },
   "dsh-desktop-next/package.json": { added: 3, removed: 1 },
   "dsh-desktop-next/scripts/package.ts": { added: 49, removed: 2 },
   "dsh-desktop-next/scripts/packaged-payload.ts": { added: 1, removed: 1 },

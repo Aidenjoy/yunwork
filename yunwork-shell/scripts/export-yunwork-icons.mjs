@@ -128,7 +128,9 @@ export async function exportIcons ({ out = DEFAULT_OUT, contract = DEFAULT_CONTR
     write(`build/${base}app-icon.icns`, icnsContainer(await Promise.all(ICNS_CHUNKS.map(async ([type, size]) => [type, await png(macSource, size)]))))
     // The bundle keeps its structure and its file names: the onboarding artwork imports them by path, and Icon Composer
     // resolves each layer by the name `icon.json` gives it.
-    write(`build/${base}app-icon.icon/Assets/${family.vectorName}`, vector)
+    // Icon Composer places SVGs at their intrinsic width/height on a 1024x1024 canvas; scale from 100x100 to 1024x1024.
+    const scaledVector = vector.replace(/\bwidth="100"\s+height="100"/u, 'width="1024" height="1024"')
+    write(`build/${base}app-icon.icon/Assets/${family.vectorName}`, scaledVector)
     const manifest = JSON.parse(readFileSync(join(DESKTOP_ROOT, 'build', base, 'app-icon.icon', 'icon.json'), 'utf8'))
     manifest.groups = manifest.groups.filter(group => group.name !== 'NEXT Badge')
     write(`build/${base}app-icon.icon/icon.json`, `${JSON.stringify(manifest, null, 2)}\n`)

@@ -47,3 +47,5 @@
   disabled: true
 - id: llm-deepseek-account
   disabled: true
+- id: ui-account-notifications
+  disabled: true
